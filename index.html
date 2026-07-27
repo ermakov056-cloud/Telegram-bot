@@ -3,15 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Морской бой</title>
+    <title>Морской бой 3.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app">
+        <!-- Фоновые волны -->
+        <div class="waves-bg">
+            <div class="wave wave1"></div>
+            <div class="wave wave2"></div>
+            <div class="wave wave3"></div>
+        </div>
+
         <!-- Меню -->
         <div id="menu" class="screen active">
-            <div class="menu-container">
+            <div class="menu-container glass">
                 <div class="tg-header">
                     <span class="logo">⚓</span>
                     <h1>Морской бой</h1>
@@ -33,7 +40,7 @@
 
         <!-- Игра -->
         <div id="game" class="screen">
-            <div class="game-container">
+            <div class="game-container glass">
                 <div class="game-header">
                     <button class="back-btn" id="backToMenu">‹</button>
                     <span id="gameTitle">⚓ Морской бой</span>
@@ -48,11 +55,11 @@
                 
                 <div class="boards-wrapper">
                     <div class="board-container">
-                        <div class="board-title">Ваше поле</div>
+                        <div class="board-title">Ваша эскадра</div>
                         <div class="board" id="playerBoard"></div>
                     </div>
                     <div class="board-container">
-                        <div class="board-title" id="enemyBoardTitle">🌊 Поле боя</div>
+                        <div class="board-title" id="enemyBoardTitle">🌊 Акватория</div>
                         <div class="board" id="enemyBoard"></div>
                     </div>
                 </div>
@@ -61,7 +68,6 @@
                 
                 <div class="btn-group">
                     <button class="btn small" id="btnReset">🔄 Новая</button>
-                    <button class="btn small" id="btnFog">🌫️ Туман</button>
                     <button class="btn small" id="btnSound">🔊 Звук</button>
                 </div>
             </div>
@@ -69,15 +75,16 @@
 
         <!-- Настройки -->
         <div id="settings" class="screen">
-            <div class="menu-container">
+            <div class="menu-container glass">
                 <h2>⚙️ Настройки</h2>
                 
                 <div class="setting-item">
                     <label>📏 Размер поля</label>
                     <select id="sizeSelect">
-                        <option value="6">6×6</option>
-                        <option value="8" selected>8×8</option>
+                        <option value="8">8×8</option>
                         <option value="10">10×10</option>
+                        <option value="12" selected>12×12</option>
+                        <option value="14">14×14</option>
                     </select>
                 </div>
                 
@@ -92,18 +99,8 @@
                 </div>
                 
                 <div class="setting-item">
-                    <label>🌫️ Туман войны</label>
-                    <input type="checkbox" id="fogToggle" checked>
-                </div>
-                
-                <div class="setting-item">
                     <label>🔊 Звуки</label>
                     <input type="checkbox" id="soundToggle" checked>
-                </div>
-                
-                <div class="setting-item">
-                    <label>🎨 Показывать корабли</label>
-                    <input type="checkbox" id="showShips">
                 </div>
                 
                 <button class="menu-btn secondary" id="closeSettings">← Назад</button>
@@ -112,13 +109,13 @@
 
         <!-- Обучение -->
         <div id="tutorial" class="screen">
-            <div class="menu-container">
+            <div class="menu-container glass">
                 <h2>📖 Как играть</h2>
                 <div class="tutorial-content">
                     <p>🎯 <strong>Цель:</strong> Уничтожить все корабли противника</p>
-                    <p>🚢 <strong>Корабли:</strong> 3, 2, 2, 1, 1, 1 (всего 10 клеток)</p>
-                    <p>💥 <strong>Попадание:</strong> Красный крест ✕</p>
-                    <p>🌊 <strong>Промах:</strong> Серая точка ·</p>
+                    <p>🚢 <strong>Корабли:</strong> 6, 5, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1 (всего 31 клетка)</p>
+                    <p>💥 <strong>Попадание:</strong> Красный взрыв ✕</p>
+                    <p>🌊 <strong>Промах:</strong> Всплеск ·</p>
                     <p>🤖 <strong>ИИ:</strong> Чем выше сложность, тем умнее стреляет</p>
                     <p>👥 <strong>2 игрока:</strong> Играйте по очереди на одном телефоне</p>
                 </div>
@@ -128,7 +125,7 @@
 
         <!-- Результат -->
         <div id="result" class="screen">
-            <div class="result-container">
+            <div class="result-container glass">
                 <div class="result-icon" id="resultIcon">🏆</div>
                 <h2 id="resultTitle">Победа!</h2>
                 <p id="resultDetail">Вы уничтожили все корабли</p>
