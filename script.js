@@ -18,7 +18,7 @@ let currentGameShots = 0;
 let currentGameHits = 0;
 const shipSizes = [3, 2, 2, 1, 1, 1];
 
-// === Звуки (Web Audio) ===
+// === Звуки ===
 let audioCtx = null;
 
 function initAudio() {
@@ -164,10 +164,14 @@ function placeShips(board) {
     return board;
 }
 
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
 function startGame(mode) {
     gameMode = mode;
-    tg?.expand();
-    
+    if (tg) tg.expand();
     showScreen('game');
     
     if (mode === 'pvp') {
@@ -180,32 +184,9 @@ function startGame(mode) {
     resetGame();
 }
 
-function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-}
-
 function backToMenu() {
     showScreen('menu');
-    tg?.close();
-}
-
-function openSettings() {
-    showScreen('settings');
-    loadSettings();
-}
-
-function closeSettings() {
-    saveSettings();
-    showScreen('menu');
-}
-
-function showTutorial() {
-    showScreen('tutorial');
-}
-
-function closeTutorial() {
-    showScreen('menu');
+    if (tg) tg.close();
 }
 
 function resetGame() {
@@ -233,11 +214,18 @@ function resetGame() {
 function render() {
     const p1Board = document.getElementById('playerBoard');
     const p2Board = document.getElementById('enemyBoard');
+    
+    // Расчёт размера клеток
     const containerWidth = Math.min(window.innerWidth * 0.42, 180);
-    const cellSize = Math.floor((containerWidth - (SIZE - 1) * 2) / SIZE);
+    const cellSize = Math.max(20, Math.floor((containerWidth - (SIZE - 1) * 2) / SIZE));
+    const gridSize = cellSize * SIZE + (SIZE - 1) * 2;
     
     p1Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
+    p1Board.style.width = gridSize + 'px';
+    p1Board.style.height = gridSize + 'px';
     p2Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
+    p2Board.style.width = gridSize + 'px';
+    p2Board.style.height = gridSize + 'px';
     
     p1Board.innerHTML = '';
     p2Board.innerHTML = '';
@@ -260,19 +248,16 @@ function render() {
             if (v === 2) { 
                 cell2.classList.add('hit'); 
                 cell2.textContent = '✕';
-                if (enemyBoard[r][c] === 2) {
-                    cell2.classList.add('explosion');
-                }
             } else if (v === 3) {
                 cell2.classList.add('miss');
-            } else if (fogEnabled && !showShips) {
+            } else if (fogEnabled && !showShips && !gameOver) {
                 cell2.classList.add('fog');
             } else if (!gameOver && showShips && enemyBoard[r][c] === 1) {
                 cell2.classList.add('ship');
             }
             cell2.dataset.row = r;
             cell2.dataset.col = c;
-            cell2.onclick = () => makeShot(r, c);
+            cell2.addEventListener('click', () => makeShot(r, c));
             p2Board.appendChild(cell2);
         }
     }
@@ -286,14 +271,13 @@ function makeShot(row, col) {
     if (gameOver || !isPlayerTurn) return;
     if (enemyVisible[row][col] !== 0) {
         document.getElementById('status').textContent = 'Сюда уже стреляли!';
-        tg?.HapticFeedback?.impactOccurred('light');
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         return;
     }
     
     moves++;
     currentGameShots++;
     stats.shots++;
-    playSound('hit');
     
     if (enemyBoard[row][col] === 1) {
         enemyBoard[row][col] = 2;
@@ -301,7 +285,8 @@ function makeShot(row, col) {
         currentGameHits++;
         stats.hits++;
         enemyShips--;
-        tg?.HapticFeedback?.impactOccurred('heavy');
+        playSound('hit');
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
         document.getElementById('status').textContent = '🔥 ПОПАДАНИЕ! Ещё ход!';
         
         if (enemyShips === 0) {
@@ -318,7 +303,8 @@ function makeShot(row, col) {
         return;
     } else {
         enemyVisible[row][col] = 3;
-        tg?.HapticFeedback?.impactOccurred('light');
+        playSound('miss');
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         document.getElementById('status').textContent = '❌ Промах!';
         document.getElementById('turnIndicator').textContent = gameMode === 'pvp' ? '👤2' : '🤖';
         render();
@@ -349,9 +335,69 @@ function pvpTurn2() {
             playerBoard[r][c] = 2;
             playerShips--;
             playSound('hit');
-            tg?.HapticFeedback?.impactOccurred('heavy');
+            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
             if (playerShips === 0) {
                 gameOver = true;
                 stats.losses++;
                 playSound('win');
-                showResult(true, 'Игрок 2 победи
+                showResult(true, 'Игрок 2 победил!');
+                render();
+                updateStatsDisplay();
+                return;
+            }
+            document.getElementById('status').textContent = '🔥 Попадание! Ещё ход!';
+            render();
+            updateStatsDisplay();
+        } else {
+            playerBoard[r][c] = 3;
+            playSound('miss');
+            document.getElementById('status').textContent = '❌ Промах! Ход игрока 1';
+            document.getElementById('turnIndicator').textContent = '🎯';
+            isPlayerTurn = true;
+            render();
+            updateStatsDisplay();
+        }
+    };
+    
+    const cells = document.querySelectorAll('#playerBoard .cell');
+    cells.forEach((cell, index) => {
+        const r = Math.floor(index / SIZE);
+        const c = index % SIZE;
+        cell.onclick = () => tempClick(r, c);
+        cell.style.cursor = 'pointer';
+    });
+}
+
+function computerTurn() {
+    if (gameOver) return;
+    document.getElementById('turnIndicator').textContent = '🤖';
+    
+    let row, col;
+    if (difficulty === 'easy') {
+        let attempts = 0;
+        do {
+            row = Math.floor(Math.random() * SIZE);
+            col = Math.floor(Math.random() * SIZE);
+            attempts++;
+        } while ((playerBoard[row][col] !== 0 && playerBoard[row][col] !== 1) && attempts < 200);
+    } else if (difficulty === 'hard' || difficulty === 'nightmare') {
+        for (let i = 0; i < SIZE; i++) {
+            for (let j = 0; j < SIZE; j++) {
+                if ((i + j) % 2 === 0 && playerBoard[i][j] === 0) {
+                    row = i; col = j;
+                    break;
+                }
+            }
+            if (row !== undefined) break;
+        }
+        if (row === undefined) {
+            row = Math.floor(Math.random() * SIZE);
+            col = Math.floor(Math.random() * SIZE);
+        }
+    } else {
+        let found = false;
+        for (let i = 0; i < SIZE; i++) {
+            for (let j = 0; j < SIZE; j++) {
+                if (playerBoard[i][j] === 2) {
+                    for (let [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+                        let nr = i+dx, nc = j+dy;
