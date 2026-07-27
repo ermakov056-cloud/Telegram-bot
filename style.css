@@ -730,3 +730,108 @@ body {
     .cell.ship::after { font-size: 10px; }
     .cell.hit::before { font-size: 14px; }
 }
+/* === ПРИЦЕЛ === */
+.cell .crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.cell .crosshair::before,
+.cell .crosshair::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.cell .crosshair::before {
+    width: 2px;
+    height: 80%;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.cell .crosshair::after {
+    width: 80%;
+    height: 2px;
+    left: 10%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.cell .crosshair .dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(255, 50, 50, 0.8);
+    box-shadow: 0 0 10px rgba(255, 50, 50, 0.4);
+}
+
+.cell .crosshair .circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: 60%;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.cell .crosshair .corner {
+    position: absolute;
+    width: 15%;
+    height: 15%;
+    border-color: rgba(255, 255, 255, 0.5);
+    border-style: solid;
+    border-width: 0;
+}
+
+.cell .crosshair .corner-tl {
+    top: 10%;
+    left: 10%;
+    border-top-width: 2px;
+    border-left-width: 2px;
+}
+.cell .crosshair .corner-tr {
+    top: 10%;
+    right: 10%;
+    border-top-width: 2px;
+    border-right-width: 2px;
+}
+.cell .crosshair .corner-bl {
+    bottom: 10%;
+    left: 10%;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+}
+.cell .crosshair .corner-br {
+    bottom: 10%;
+    right: 10%;
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+}
+
+.cell .crosshair.active {
+    opacity: 1;
+}
+
+/* Прицел при наведении на врага */
+.cell.fog:hover .crosshair,
+.cell:not(.hit):not(.miss):hover .crosshair {
+    opacity: 1;
+}
+
+.cell.fog:hover {
+    background: rgba(30, 80, 130, 0.4);
+    border-color: rgba(100, 200, 255, 0.2);
+}
