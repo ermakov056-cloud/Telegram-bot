@@ -58,7 +58,7 @@ let audioCtx = null;
 function playSound(type) {
     if (!soundEnabled) return;
     try {
-        if (!audioCtx) audioCtx = new AudioContext();
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
@@ -78,18 +78,6 @@ function playSound(type) {
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
             osc.start(audioCtx.currentTime);
             osc.stop(audioCtx.currentTime + 0.12);
-        } else if (type === 'win') {
-            [523, 659, 784].forEach((freq, i) => {
-                const o = audioCtx.createOscillator();
-                const g = audioCtx.createGain();
-                o.connect(g);
-                g.connect(audioCtx.destination);
-                o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15);
-                g.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.15);
-                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.2);
-                o.start(audioCtx.currentTime + i * 0.15);
-                o.stop(audioCtx.currentTime + i * 0.15 + 0.2);
-            });
         }
     } catch(e) {}
 }
@@ -148,14 +136,6 @@ function updateUI() {
         if (profile.rating >= r.minRating) rank = r;
     }
     document.getElementById('playerRank').textContent = rank.title;
-}
-
-function getRank(rating) {
-    let current = ranks[0];
-    for (let r of ranks) {
-        if (rating >= r.minRating) current = r;
-    }
-    return current.title;
 }
 
 // === ИГРОВАЯ ЛОГИКА ===
@@ -271,29 +251,47 @@ function render() {
     
     for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
-            // Своё поле
+            // Своё поле (корабли видны)
             let cell1 = document.createElement('div');
             cell1.className = 'cell';
             let val = playerBoard[r][c];
-            if (val === 1) cell1.classList.add('ship');
-            else if (val === 2) { cell1.classList.add('hit'); cell1.textContent = '✕'; }
-            else if (val === 3) cell1.classList.add('miss');
+            if (val === 1) {
+                cell1.classList.add('ship');
+                cell1.textContent = '■';
+            } else if (val === 2) {
+                cell1.classList.add('hit');
+                cell1.textContent = '✕';
+            } else if (val === 3) {
+                cell1.classList.add('miss');
+                cell1.textContent = '·';
+            } else {
+                cell1.textContent = ' ';
+            }
             p1Board.appendChild(cell1);
             
-            // Поле врага
+            // Поле врага (корабли скрыты)
             let cell2 = document.createElement('div');
             cell2.className = 'cell';
             let v = enemyVisible[r][c];
-            if (v === 2) { cell2.classList.add('hit'); cell2.textContent = '✕'; }
-            else if (v === 3) cell2.classList.add('miss');
-            else cell2.classList.add('fog');
+            if (v === 2) {
+                cell2.classList.add('hit');
+                cell2.textContent = '✕';
+            } else if (v === 3) {
+                cell2.classList.add('miss');
+                cell2.textContent = '·';
+            } else {
+                cell2.classList.add('fog');
+                cell2.textContent = ' ';
+            }
             
-            cell2.dataset.row = r;
-            cell2.dataset.col = c;
-            cell2.addEventListener('click', function(e) {
-                e.stopPropagation();
-                makeShot(parseInt(this.dataset.row), parseInt(this.dataset.col));
-            });
+            // ВАЖНО: используем onclick вместо addEventListener для iPhone
+            cell2.onclick = (function(row, col) {
+                return function() {
+                    makeShot(row, col);
+                };
+            })(r, c);
+            
+            cell2.style.cursor = 'pointer';
             p2Board.appendChild(cell2);
         }
     }
@@ -303,9 +301,16 @@ function render() {
     document.getElementById('moveCounter').textContent = moves;
 }
 
+// === ВЫСТРЕЛ ===
 function makeShot(row, col) {
-    if (gameOver) return;
-    if (!isPlayerTurn) return;
+    if (gameOver) {
+        document.getElementById('status').textContent = 'Игра окончена! Начни новую';
+        return;
+    }
+    if (!isPlayerTurn) {
+        document.getElementById('status').textContent = 'Сейчас ход противника...';
+        return;
+    }
     if (enemyVisible[row][col] !== 0) {
         document.getElementById('status').textContent = 'Сюда уже стреляли!';
         return;
@@ -314,6 +319,7 @@ function makeShot(row, col) {
     moves++;
     currentGameShots++;
     profile.shots++;
+    saveProfile();
     
     if (enemyBoard[row][col] === 1) {
         enemyBoard[row][col] = 2;
@@ -329,10 +335,9 @@ function makeShot(row, col) {
             profile.wins++;
             profile.rating += 50;
             saveProfile();
-            playSound('win');
-            showResult(true);
-            render();
             updateUI();
+            render();
+            setTimeout(() => showResult(true), 300);
             return;
         }
         render();
@@ -343,67 +348,16 @@ function makeShot(row, col) {
         enemyVisible[row][col] = 3;
         playSound('miss');
         document.getElementById('status').textContent = '❌ Промах!';
-        document.getElementById('turnIndicator').textContent = gameMode === 'pvp' ? '👤2' : '🤖';
+        document.getElementById('turnIndicator').textContent = '🤖';
         render();
         updateUI();
         isPlayerTurn = false;
         
-        if (gameMode === 'pvp') {
-            setTimeout(() => pvpTurn2(), 400);
-        } else {
-            setTimeout(() => computerTurn(), 500);
-        }
+        setTimeout(() => computerTurn(), 500);
     }
 }
 
-function pvpTurn2() {
-    if (gameOver) return;
-    document.getElementById('status').textContent = 'Игрок 2, твой ход!';
-    document.getElementById('turnIndicator').textContent = '👤2';
-    
-    const tempClick = (r, c) => {
-        if (gameOver) return;
-        if (playerBoard[r][c] === 2 || playerBoard[r][c] === 3) {
-            document.getElementById('status').textContent = 'Сюда уже стреляли!';
-            return;
-        }
-        moves++;
-        if (playerBoard[r][c] === 1) {
-            playerBoard[r][c] = 2;
-            playerShips--;
-            playSound('hit');
-            if (playerShips === 0) {
-                gameOver = true;
-                profile.losses++;
-                saveProfile();
-                showResult(false, 'Игрок 2 победил!');
-                render();
-                updateUI();
-                return;
-            }
-            document.getElementById('status').textContent = '🔥 Попадание! Ещё ход!';
-            render();
-            updateUI();
-        } else {
-            playerBoard[r][c] = 3;
-            playSound('miss');
-            document.getElementById('status').textContent = '❌ Промах! Ход игрока 1';
-            document.getElementById('turnIndicator').textContent = '🎯';
-            isPlayerTurn = true;
-            render();
-            updateUI();
-        }
-    };
-    
-    const cells = document.querySelectorAll('#playerBoard .cell');
-    cells.forEach((cell, index) => {
-        const r = Math.floor(index / SIZE);
-        const c = index % SIZE;
-        cell.onclick = function() { tempClick(r, c); };
-        cell.style.cursor = 'pointer';
-    });
-}
-
+// === ХОД КОМПЬЮТЕРА ===
 function computerTurn() {
     if (gameOver) return;
     document.getElementById('turnIndicator').textContent = '🤖';
@@ -425,9 +379,9 @@ function computerTurn() {
             gameOver = true;
             profile.losses++;
             saveProfile();
-            showResult(false);
             render();
             updateUI();
+            setTimeout(() => showResult(false), 300);
             return;
         }
         render();
@@ -443,11 +397,12 @@ function computerTurn() {
     updateUI();
 }
 
-function showResult(won, message) {
+// === РЕЗУЛЬТАТ ===
+function showResult(won) {
     showScreen('result');
     document.getElementById('resultIcon').textContent = won ? '🏆' : '💀';
     document.getElementById('resultTitle').textContent = won ? 'Победа!' : 'Поражение...';
-    document.getElementById('resultDetail').textContent = message || (won ? 'Вы уничтожили все корабли!' : 'Вы проиграли...');
+    document.getElementById('resultDetail').textContent = won ? 'Вы уничтожили все корабли!' : 'Вы проиграли...';
     document.getElementById('resultShots').textContent = currentGameShots;
     const acc = currentGameShots > 0 ? Math.round(currentGameHits/currentGameShots*100) : 0;
     document.getElementById('resultAccuracy').textContent = acc + '%';
@@ -481,7 +436,7 @@ function renderShipyard() {
             </button>
         `;
         
-        item.querySelector('.upgrade-btn').addEventListener('click', () => {
+        item.querySelector('.upgrade-btn').onclick = function() {
             if (!ship.owned) {
                 if (profile.rating < ship.price) return alert('Недостаточно рейтинга!');
                 profile.rating -= ship.price;
@@ -498,7 +453,7 @@ function renderShipyard() {
             saveProfile();
             renderShipyard();
             updateUI();
-        });
+        };
         
         container.appendChild(item);
     });
@@ -547,36 +502,36 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUI();
     
     // Меню
-    document.getElementById('btnVsAI').addEventListener('click', () => startGame('ai'));
-    document.getElementById('btnVsPlayer').addEventListener('click', () => startGame('pvp'));
-    document.getElementById('btnShipyard').addEventListener('click', () => showScreen('shipyard'));
-    document.getElementById('btnMissions').addEventListener('click', () => showScreen('missions'));
-    document.getElementById('btnSettings').addEventListener('click', () => showScreen('settings'));
+    document.getElementById('btnVsAI').onclick = () => startGame('ai');
+    document.getElementById('btnVsPlayer').onclick = () => startGame('pvp');
+    document.getElementById('btnShipyard').onclick = () => showScreen('shipyard');
+    document.getElementById('btnMissions').onclick = () => showScreen('missions');
+    document.getElementById('btnSettings').onclick = () => showScreen('settings');
     
     // Игра
-    document.getElementById('backToMenu').addEventListener('click', backToMenu);
-    document.getElementById('btnReset').addEventListener('click', resetGame);
-    document.getElementById('btnSound').addEventListener('click', function() {
+    document.getElementById('backToMenu').onclick = backToMenu;
+    document.getElementById('btnReset').onclick = resetGame;
+    document.getElementById('btnSound').onclick = function() {
         soundEnabled = !soundEnabled;
         document.getElementById('soundToggle').checked = soundEnabled;
         if (soundEnabled) playSound('hit');
-    });
-    document.getElementById('avatarEdit').addEventListener('click', changeAvatar);
+    };
+    document.getElementById('avatarEdit').onclick = changeAvatar;
     
     // Настройки
-    document.getElementById('closeSettings').addEventListener('click', function() {
+    document.getElementById('closeSettings').onclick = function() {
         saveSettings();
         showScreen('menu');
-    });
-    document.getElementById('closeShipyard').addEventListener('click', () => showScreen('menu'));
-    document.getElementById('closeMissions').addEventListener('click', () => showScreen('menu'));
-    document.getElementById('sizeSelect').addEventListener('change', saveSettings);
-    document.getElementById('difficultySelect').addEventListener('change', saveSettings);
-    document.getElementById('soundToggle').addEventListener('change', saveSettings);
+    };
+    document.getElementById('closeShipyard').onclick = () => showScreen('menu');
+    document.getElementById('closeMissions').onclick = () => showScreen('menu');
+    document.getElementById('sizeSelect').onchange = saveSettings;
+    document.getElementById('difficultySelect').onchange = saveSettings;
+    document.getElementById('soundToggle').onchange = saveSettings;
     
     // Результат
-    document.getElementById('closeResult').addEventListener('click', closeResult);
-    document.getElementById('backToMenuFromResult').addEventListener('click', backToMenu);
+    document.getElementById('closeResult').onclick = closeResult;
+    document.getElementById('backToMenuFromResult').onclick = backToMenu;
     
     // Telegram
     if (tg) {
@@ -593,7 +548,8 @@ document.addEventListener('DOMContentLoaded', function() {
         tg.BackButton.show();
     }
     
-    window.addEventListener('resize', () => {
+    // Ресайз
+    window.addEventListener('resize', function() {
         if (document.getElementById('game').classList.contains('active')) render();
     });
 });
