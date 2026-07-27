@@ -1,0 +1,173 @@
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+body {
+    background: #0a0a2a;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    touch-action: manipulation;
+}
+
+/* Меню */
+.menu-container {
+    background: #1a1a4a;
+    padding: 30px 40px;
+    border-radius: 24px;
+    box-shadow: 0 0 60px rgba(68, 170, 255, 0.2);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+.menu-container h1 {
+    color: #4af;
+    font-size: 32px;
+    margin-bottom: 24px;
+    text-shadow: 0 0 30px rgba(68, 170, 255, 0.3);
+}
+.menu-btn {
+    background: #2a6aaa;
+    border: none;
+    color: white;
+    padding: 14px 30px;
+    border-radius: 14px;
+    font-size: 18px;
+    cursor: pointer;
+    width: 100%;
+    margin: 6px 0;
+    transition: 0.2s;
+}
+.menu-btn:active { transform: scale(0.95); background: #1a4a8a; }
+.menu-stats {
+    color: #88ddff;
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #2a4a6a;
+    font-size: 14px;
+}
+.menu-stats span { color: #ffcc44; }
+
+/* Игра */
+.container {
+    background: #1a1a4a;
+    padding: 16px;
+    border-radius: 20px;
+    box-shadow: 0 0 40px rgba(0,100,255,0.2);
+    max-width: 95vw;
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.header h1 { color: #4af; font-size: 20px; }
+.back-btn {
+    background: transparent;
+    border: none;
+    color: #88ddff;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 10px;
+}
+.scores {
+    color: #88ddff;
+    display: flex;
+    justify-content: space-around;
+    font-size: 14px;
+    padding: 6px;
+}
+.scores span { color: #ffcc44; }
+.boards {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.board-container {
+    background: #0a0a3a;
+    padding: 8px;
+    border-radius: 12px;
+}
+.board-title {
+    color: #88ccff;
+    text-align: center;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+.board {
+    display: grid;
+    gap: 2px;
+}
+.cell {
+    width: 28px;
+    height: 28px;
+    background: #1a2a5a;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.12s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    touch-action: manipulation;
+}
+.cell:active { transform: scale(0.88); }
+.cell.ship { background: #2a6aaa; }
+.cell.hit { background: #ff3333; animation: hitAnim 0.3s; }
+.cell.hit::after { content: "✕"; }
+.cell.miss { background: #1a2a4a; }
+.cell.miss::after { content: "·"; color: #446688; }
+@keyframes hitAnim {
+    0% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+.status {
+    color: #aaddff;
+    text-align: center;
+    padding: 10px;
+    font-size: 16px;
+    background: #0a0a3a;
+    border-radius: 12px;
+    margin-top: 10px;
+    min-height: 44px;
+}
+.btn-group { display: flex; justify-content: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.btn {
+    background: #2a6aaa;
+    border: none;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.btn:active { transform: scale(0.95); background: #1a4a8a; }
+
+/* Настройки */
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #aaddff;
+    padding: 12px 0;
+    border-bottom: 1px solid #2a4a6a;
+}
+.setting-item select, .setting-item input {
+    background: #0a0a3a;
+    color: white;
+    border: 1px solid #2a6aaa;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+.setting-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #2a6aaa;
+}
