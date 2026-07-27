@@ -345,108 +345,140 @@ body {
 
 .cell:active { transform: scale(0.85); }
 
-/* === КОРАБЛИ (реалистичные) === */
+/* === КОРАБЛИ (чёткие и узнаваемые) === */
 .cell.ship {
     background: transparent;
     border: none;
     position: relative;
 }
 
-/* Корпус корабля */
+/* Корпус корабля — простая форма */
 .cell.ship::before {
     content: '';
     position: absolute;
-    top: 10%;
-    left: 5%;
-    right: 5%;
-    bottom: 10%;
-    border-radius: 2px 2px 6px 6px;
-    background: linear-gradient(170deg, #5a7a5a 0%, #2a5a3a 40%, #1a3a2a 100%);
+    top: 15%;
+    left: 8%;
+    right: 8%;
+    bottom: 15%;
+    border-radius: 3px 3px 6px 6px;
+    background: linear-gradient(180deg, #5a7a5a 0%, #2a5a3a 60%, #1a3a2a 100%);
     box-shadow: 
-        inset 0 2px 8px rgba(255, 255, 255, 0.2),
-        inset 0 -4px 8px rgba(0, 0, 0, 0.3),
-        0 2px 10px rgba(0, 0, 0, 0.3);
+        inset 0 2px 6px rgba(255, 255, 255, 0.15),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Палуба */
+/* Палуба — светлая полоса */
 .cell.ship::after {
     content: '';
     position: absolute;
-    top: 15%;
-    left: 10%;
-    right: 10%;
-    bottom: 30%;
+    top: 20%;
+    left: 12%;
+    right: 12%;
+    bottom: 40%;
     border-radius: 1px;
-    background: linear-gradient(180deg, #8a7a5a 0%, #6a5a3a 100%);
-    box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.1);
+    background: linear-gradient(180deg, #9a8a6a 0%, #7a6a4a 100%);
+    box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.15);
 }
 
-/* === РАЗНЫЕ КОРАБЛИ === */
-
-/* 4-палубный (линкор) */
+/* === 4-палубный (линкор) — самый большой === */
 .cell.ship[data-size="4"]::before {
-    background: linear-gradient(170deg, #6a7a5a 0%, #3a5a3a 40%, #1a3a2a 100%);
-    border-top: 2px solid #5a6a4a;
+    background: linear-gradient(180deg, #4a6a5a 0%, #2a5a3a 50%, #1a3a2a 100%);
+    border: 1px solid #3a5a4a;
 }
 .cell.ship[data-size="4"]::after {
-    background: linear-gradient(180deg, #9a8a6a 0%, #7a6a4a 100%);
+    background: linear-gradient(180deg, #aa9a7a 0%, #8a7a5a 100%);
+    top: 18%;
+    bottom: 35%;
 }
+/* Труба */
 .cell.ship[data-size="4"] .ship-detail {
     display: block;
     position: absolute;
-    top: -5%;
-    left: 30%;
-    width: 15%;
+    top: 0%;
+    left: 35%;
+    width: 14%;
     height: 25%;
-    background: radial-gradient(ellipse at bottom, #4a4a4a, #2a2a2a);
+    background: linear-gradient(180deg, #4a4a4a, #2a2a2a);
     border-radius: 2px 2px 0 0;
     box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
 }
+/* Флаг */
 .cell.ship[data-size="4"] .ship-flag {
     display: block;
     position: absolute;
-    top: -15%;
-    right: 5%;
-    width: 20%;
-    height: 15%;
+    top: -12%;
+    right: 8%;
+    width: 18%;
+    height: 16%;
     background: #cc2222;
     clip-path: polygon(0 0, 100% 50%, 0 100%);
     animation: flagWave 2s ease-in-out infinite;
 }
+/* Нос корабля (заострение) */
+.cell.ship[data-size="4"] .ship-bow {
+    display: block;
+    position: absolute;
+    bottom: 8%;
+    right: -2%;
+    width: 20%;
+    height: 20%;
+    background: linear-gradient(135deg, #2a5a3a, #1a3a2a);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
 
-/* 3-палубный (крейсер) */
+/* === 3-палубный (крейсер) === */
 .cell.ship[data-size="3"]::before {
-    background: linear-gradient(170deg, #5a7a6a 0%, #2a5a4a 40%, #1a3a2a 100%);
-    border-top: 2px solid #4a6a5a;
+    background: linear-gradient(180deg, #4a7a6a 0%, #2a5a4a 50%, #1a3a2a 100%);
+    border: 1px solid #3a6a5a;
 }
 .cell.ship[data-size="3"]::after {
-    background: linear-gradient(180deg, #8a8a6a 0%, #6a6a4a 100%);
+    background: linear-gradient(180deg, #9a8a6a 0%, #7a6a4a 100%);
+    top: 18%;
+    bottom: 38%;
 }
 .cell.ship[data-size="3"] .ship-detail {
     display: block;
     position: absolute;
-    top: -2%;
+    top: 2%;
     left: 40%;
     width: 12%;
-    height: 15%;
-    background: radial-gradient(ellipse at bottom, #5a5a5a, #3a3a3a);
+    height: 18%;
+    background: linear-gradient(180deg, #4a4a4a, #2a2a2a);
     border-radius: 2px 2px 0 0;
 }
 
-/* 2-палубный (эсминец) */
+/* === 2-палубный (эсминец) === */
 .cell.ship[data-size="2"]::before {
-    background: linear-gradient(170deg, #5a7a7a 0%, #2a5a5a 40%, #1a3a3a 100%);
-    border-top: 1px solid #4a6a6a;
+    background: linear-gradient(180deg, #5a7a7a 0%, #2a5a5a 50%, #1a3a3a 100%);
+    border: 1px solid #3a6a6a;
 }
 .cell.ship[data-size="2"]::after {
-    background: linear-gradient(180deg, #7a8a7a 0%, #5a6a5a 100%);
+    background: linear-gradient(180deg, #8a8a6a 0%, #6a6a4a 100%);
+    top: 20%;
+    bottom: 40%;
+}
+.cell.ship[data-size="2"] .ship-detail {
+    display: block;
+    position: absolute;
+    top: 5%;
+    left: 42%;
+    width: 10%;
+    height: 14%;
+    background: linear-gradient(180deg, #4a4a4a, #2a2a2a);
+    border-radius: 1px 1px 0 0;
 }
 
-/* 1-палубный (катер) */
+/* === 1-палубный (катер) === */
 .cell.ship[data-size="1"]::before {
-    background: radial-gradient(ellipse at 50% 40%, #4a7a5a, #1a4a2a);
+    background: radial-gradient(ellipse at 50% 45%, #4a7a5a, #1a4a2a);
     border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 2px 6px rgba(255,255,255,0.2);
+    border: 1px solid #3a5a4a;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 2px 6px rgba(255,255,255,0.15);
+    top: 20%;
+    left: 15%;
+    right: 15%;
+    bottom: 20%;
 }
 .cell.ship[data-size="1"]::after {
     content: '⚓';
@@ -454,19 +486,20 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 12px;
-    color: rgba(255,255,255,0.3);
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
     background: none;
 }
 
+/* Анимация флага */
 @keyframes flagWave {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(5deg); }
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(6deg); }
 }
 
-/* === СКИНЫ КОРАБЛЕЙ === */
+/* === СКИНЫ === */
 .cell.ship.skin-gold::before {
-    background: linear-gradient(170deg, #e8c84a 0%, #d4a017 40%, #b8860b 100%) !important;
+    background: linear-gradient(180deg, #e8c84a 0%, #d4a017 50%, #b8860b 100%) !important;
     box-shadow: 0 0 20px rgba(212, 160, 23, 0.4) !important;
 }
 .cell.ship.skin-gold::after {
@@ -474,21 +507,21 @@ body {
 }
 
 .cell.ship.skin-bronze::before {
-    background: linear-gradient(170deg, #cd7f32 0%, #8d6e3f 40%, #6d4e2f 100%) !important;
+    background: linear-gradient(180deg, #cd7f32 0%, #8d6e3f 50%, #6d4e2f 100%) !important;
 }
 .cell.ship.skin-bronze::after {
     background: linear-gradient(180deg, #dd8f42 0%, #9d7e4f 100%) !important;
 }
 
 .cell.ship.skin-steel::before {
-    background: linear-gradient(170deg, #6a8a9a 0%, #4a6a7a 40%, #2a4a5a 100%) !important;
+    background: linear-gradient(180deg, #6a8a9a 0%, #4a6a7a 50%, #2a4a5a 100%) !important;
 }
 .cell.ship.skin-steel::after {
     background: linear-gradient(180deg, #8aaaba 0%, #5a7a8a 100%) !important;
 }
 
 .cell.ship.skin-pirate::before {
-    background: linear-gradient(170deg, #3a2a2a 0%, #2a1a1a 40%, #1a0a0a 100%) !important;
+    background: linear-gradient(180deg, #3a2a2a 0%, #2a1a1a 50%, #1a0a0a 100%) !important;
     border: 1px solid #5a3a3a !important;
 }
 .cell.ship.skin-pirate::after {
