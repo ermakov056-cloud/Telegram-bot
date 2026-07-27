@@ -78,6 +78,18 @@ function playSound(type) {
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
             osc.start(audioCtx.currentTime);
             osc.stop(audioCtx.currentTime + 0.12);
+        } else if (type === 'win') {
+            [523, 659, 784].forEach((freq, i) => {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.connect(g);
+                g.connect(audioCtx.destination);
+                o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15);
+                g.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.15);
+                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.2);
+                o.start(audioCtx.currentTime + i * 0.15);
+                o.stop(audioCtx.currentTime + i * 0.15 + 0.2);
+            });
         }
     } catch(e) {}
 }
@@ -198,8 +210,8 @@ function startGame(mode) {
     gameMode = mode;
     if (tg) tg.expand();
     showScreen('game');
-    document.getElementById('enemyBoardTitle').textContent = mode === 'pvp' ? '👥 Игрок 2' : '🌊 Поле врага';
-    document.getElementById('gameTitle').textContent = mode === 'pvp' ? '👥 2 игрока' : '🤖 Против ИИ';
+    document.getElementById('enemyBoardTitle').textContent = mode === 'pvp' ? '👥 Игрок 2' : '🌊 Акватория';
+    document.getElementById('gameTitle').textContent = mode === 'pvp' ? '👥 2 игрока' : '⚔️ Против ИИ';
     resetGame();
 }
 
@@ -223,7 +235,7 @@ function resetGame() {
     currentGameShots = 0;
     currentGameHits = 0;
     
-    document.getElementById('status').textContent = 'Нажми на клетку чтобы выстрелить';
+    document.getElementById('status').textContent = '🌊 Нажми на клетку чтобы выстрелить';
     document.getElementById('turnIndicator').textContent = '🎯';
     document.getElementById('moveCounter').textContent = '0';
     render();
@@ -255,15 +267,15 @@ function render() {
             let cell1 = document.createElement('div');
             cell1.className = 'cell';
             let val = playerBoard[r][c];
+            
             if (val === 1) {
                 cell1.classList.add('ship');
-                cell1.textContent = '■';
+                let size = getShipSize(r, c, playerBoard);
+                cell1.dataset.size = size;
             } else if (val === 2) {
                 cell1.classList.add('hit');
-                cell1.textContent = '✕';
             } else if (val === 3) {
                 cell1.classList.add('miss');
-                cell1.textContent = '·';
             }
             p1Board.appendChild(cell1);
             
@@ -271,17 +283,15 @@ function render() {
             let cell2 = document.createElement('div');
             cell2.className = 'cell';
             let v = enemyVisible[r][c];
+            
             if (v === 2) {
                 cell2.classList.add('hit');
-                cell2.textContent = '✕';
             } else if (v === 3) {
                 cell2.classList.add('miss');
-                cell2.textContent = '·';
             } else {
                 cell2.classList.add('fog');
-                cell2.textContent = ' ';
             }
-            // Привязываем данные
+            
             cell2.setAttribute('data-row', r);
             cell2.setAttribute('data-col', c);
             p2Board.appendChild(cell2);
@@ -293,9 +303,20 @@ function render() {
     document.getElementById('moveCounter').textContent = moves;
 }
 
-// === ДЕЛЕГИРОВАНИЕ СОБЫТИЙ (работает на 100% в Telegram) ===
+function getShipSize(row, col, board) {
+    let size = 1;
+    let hCount = 1;
+    for (let i = col + 1; i < SIZE && board[row][i] === 1; i++) hCount++;
+    for (let i = col - 1; i >= 0 && board[row][i] === 1; i--) hCount++;
+    let vCount = 1;
+    for (let i = row + 1; i < SIZE && board[i][col] === 1; i++) vCount++;
+    for (let i = row - 1; i >= 0 && board[i][col] === 1; i--) vCount++;
+    size = Math.max(hCount, vCount);
+    return Math.min(size, 5);
+}
+
+// === ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ===
 document.addEventListener('DOMContentLoaded', function() {
-    // Клики по полю врага
     document.getElementById('enemyBoard').addEventListener('click', function(e) {
         let cell = e.target.closest('.cell');
         if (!cell) return;
@@ -310,15 +331,15 @@ document.addEventListener('DOMContentLoaded', function() {
 // === ВЫСТРЕЛ ===
 function makeShot(row, col) {
     if (gameOver) {
-        document.getElementById('status').textContent = 'Игра окончена! Начни новую';
+        document.getElementById('status').textContent = '🏁 Игра окончена! Начни новую';
         return;
     }
     if (!isPlayerTurn) {
-        document.getElementById('status').textContent = 'Сейчас ход противника...';
+        document.getElementById('status').textContent = '⏳ Сейчас ход противника...';
         return;
     }
     if (enemyVisible[row][col] !== 0) {
-        document.getElementById('status').textContent = 'Сюда уже стреляли!';
+        document.getElementById('status').textContent = '⚠️ Сюда уже стреляли!';
         return;
     }
     
@@ -334,7 +355,7 @@ function makeShot(row, col) {
         profile.hits++;
         enemyShips--;
         playSound('hit');
-        document.getElementById('status').textContent = '🔥 ПОПАДАНИЕ! Ещё ход!';
+        document.getElementById('status').textContent = '💥 ПОПАДАНИЕ! Ещё ход!';
         
         if (enemyShips === 0) {
             gameOver = true;
@@ -343,7 +364,8 @@ function makeShot(row, col) {
             saveProfile();
             updateUI();
             render();
-            setTimeout(() => showResult(true), 300);
+            playSound('win');
+            setTimeout(() => showResult(true), 400);
             return;
         }
         render();
@@ -353,7 +375,7 @@ function makeShot(row, col) {
         enemyBoard[row][col] = 3;
         enemyVisible[row][col] = 3;
         playSound('miss');
-        document.getElementById('status').textContent = '❌ Промах!';
+        document.getElementById('status').textContent = '🌊 Промах!';
         document.getElementById('turnIndicator').textContent = '🤖';
         render();
         updateUI();
@@ -387,7 +409,7 @@ function computerTurn() {
             saveProfile();
             render();
             updateUI();
-            setTimeout(() => showResult(false), 300);
+            setTimeout(() => showResult(false), 400);
             return;
         }
         render();
@@ -395,7 +417,7 @@ function computerTurn() {
     } else {
         playerBoard[row][col] = 3;
         playSound('miss');
-        document.getElementById('status').textContent = `Враг промахнулся по ${String.fromCharCode(65+col)}${row+1}`;
+        document.getElementById('status').textContent = `🌊 Враг промахнулся по ${String.fromCharCode(65+col)}${row+1}`;
         document.getElementById('turnIndicator').textContent = '🎯';
         isPlayerTurn = true;
         render();
@@ -445,7 +467,6 @@ function renderShipyard() {
     });
 }
 
-// Выносим функцию в глобальный доступ для onclick
 window.upgradeShip = function(id) {
     const ship = shipyard.ships.find(s => s.id === id);
     if (!ship) return;
@@ -510,7 +531,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
     updateUI();
     
-    // Все кнопки через onclick в HTML или через присвоение
     document.getElementById('btnVsAI').onclick = function() { startGame('ai'); };
     document.getElementById('btnVsPlayer').onclick = function() { startGame('pvp'); };
     document.getElementById('btnShipyard').onclick = function() { showScreen('shipyard'); };
@@ -556,11 +576,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Тема Telegram
+// === Тема Telegram ===
 if (tg) {
     const theme = tg.themeParams;
     if (theme) {
-        document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color || '#0a0e27');
+        document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color || '#0a1628');
         document.documentElement.style.setProperty('--tg-theme-text-color', theme.text_color || '#ffffff');
         document.documentElement.style.setProperty('--tg-theme-hint-color', theme.hint_color || '#88ddff');
         document.documentElement.style.setProperty('--tg-theme-button-color', theme.button_color || '#2a6aaa');
