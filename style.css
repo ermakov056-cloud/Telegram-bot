@@ -321,7 +321,7 @@ body {
     overflow: hidden;
 }
 
-/* === КЛЕТКИ — ГЛАВНЫЙ ФИКС === */
+/* === КЛЕТКИ === */
 .cell {
     background: rgba(20, 50, 90, 0.4);
     border-radius: 3px;
@@ -344,24 +344,6 @@ body {
 }
 
 .cell:active { transform: scale(0.85); }
-
-/* КОРАБЛЬ */
-.cell.ship {
-    background: transparent;
-    border: none;
-}
-
-.cell.ship::before {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    right: 2px;
-    bottom: 2px;
-    border-radius: 2px;
-    background: linear-gradient(160deg, #4a7a5a, #2a5a3a);
-    box-shadow: inset 0 2px 4px rgba(255,255,255,0.15), 0 2px 8px rgba(42,106,58,0.3);
-}
 
 /* === КОРАБЛИ (реалистичные) === */
 .cell.ship {
@@ -409,7 +391,6 @@ body {
 .cell.ship[data-size="4"]::after {
     background: linear-gradient(180deg, #9a8a6a 0%, #7a6a4a 100%);
 }
-/* Труба */
 .cell.ship[data-size="4"] .ship-detail {
     display: block;
     position: absolute;
@@ -421,7 +402,6 @@ body {
     border-radius: 2px 2px 0 0;
     box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
 }
-/* Флаг */
 .cell.ship[data-size="4"] .ship-flag {
     display: block;
     position: absolute;
@@ -479,20 +459,55 @@ body {
     background: none;
 }
 
-/* Анимация флага */
 @keyframes flagWave {
     0%, 100% { transform: rotate(0deg); }
     50% { transform: rotate(5deg); }
 }
 
-.cell.ship[data-size="5"]::before { background: linear-gradient(160deg, #5a9a6a, #2a5a3a); }
-.cell.ship[data-size="4"]::before { background: linear-gradient(160deg, #4a8a5a, #2a6a3a); }
-.cell.ship[data-size="3"]::before { background: linear-gradient(160deg, #4a7a5a, #2a5a3a); }
-.cell.ship[data-size="2"]::before { background: linear-gradient(160deg, #5a7a5a, #3a5a3a); }
-.cell.ship[data-size="1"]::before { background: radial-gradient(circle at 40% 35%, #6a8a6a, #3a5a3a); }
-.cell.ship[data-size="1"]::after { content: '●'; font-size: 12px; color: rgba(255,255,255,0.15); }
+/* === СКИНЫ КОРАБЛЕЙ === */
+.cell.ship.skin-gold::before {
+    background: linear-gradient(170deg, #e8c84a 0%, #d4a017 40%, #b8860b 100%) !important;
+    box-shadow: 0 0 20px rgba(212, 160, 23, 0.4) !important;
+}
+.cell.ship.skin-gold::after {
+    background: linear-gradient(180deg, #f0e06a 0%, #d4a017 100%) !important;
+}
 
-/* ПОПАДАНИЕ */
+.cell.ship.skin-bronze::before {
+    background: linear-gradient(170deg, #cd7f32 0%, #8d6e3f 40%, #6d4e2f 100%) !important;
+}
+.cell.ship.skin-bronze::after {
+    background: linear-gradient(180deg, #dd8f42 0%, #9d7e4f 100%) !important;
+}
+
+.cell.ship.skin-steel::before {
+    background: linear-gradient(170deg, #6a8a9a 0%, #4a6a7a 40%, #2a4a5a 100%) !important;
+}
+.cell.ship.skin-steel::after {
+    background: linear-gradient(180deg, #8aaaba 0%, #5a7a8a 100%) !important;
+}
+
+.cell.ship.skin-pirate::before {
+    background: linear-gradient(170deg, #3a2a2a 0%, #2a1a1a 40%, #1a0a0a 100%) !important;
+    border: 1px solid #5a3a3a !important;
+}
+.cell.ship.skin-pirate::after {
+    background: linear-gradient(180deg, #5a3a3a 0%, #3a1a1a 100%) !important;
+}
+.cell.ship.skin-pirate .ship-flag {
+    background: #1a1a1a !important;
+}
+.cell.ship.skin-pirate .ship-flag::after {
+    content: '☠';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 8px;
+    color: #fff;
+}
+
+/* === ПОПАДАНИЕ === */
 .cell.hit {
     background: transparent;
     border: none;
@@ -531,7 +546,7 @@ body {
     100% { transform: scale(2); opacity: 0; }
 }
 
-/* ПРОМАХ */
+/* === ПРОМАХ === */
 .cell.miss {
     background: rgba(20, 60, 100, 0.15);
     border: 1px solid rgba(100, 200, 255, 0.06);
@@ -554,7 +569,7 @@ body {
     100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
 }
 
-/* ТУМАН */
+/* === ТУМАН === */
 .cell.fog {
     background: rgba(10, 30, 60, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.02);
@@ -570,166 +585,6 @@ body {
     font-size: 12px;
 }
 
-/* === СТАТУС === */
-.status {
-    text-align: center;
-    padding: 8px;
-    font-size: 13px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
-    margin-top: 6px;
-    min-height: 34px;
-    color: #aaddff;
-    font-weight: 500;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-/* === КНОПКИ === */
-.btn-group {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 6px;
-}
-
-.btn {
-    background: rgba(42, 106, 170, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #aaddff;
-    padding: 5px 14px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.12s;
-}
-
-.btn:active { transform: scale(0.93); background: rgba(42, 106, 170, 0.35); }
-
-/* === НАСТРОЙКИ === */
-.setting-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: #aaddff;
-    font-size: 14px;
-}
-
-.setting-item select,
-.setting-item input {
-    background: rgba(0, 0, 0, 0.4);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 4px 10px;
-    border-radius: 8px;
-    font-size: 13px;
-}
-
-.setting-item input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #2a6aaa;
-}
-
-/* === РЕЗУЛЬТАТ === */
-.result-container {
-    padding: 24px 16px;
-    border-radius: 16px;
-    text-align: center;
-    margin-top: 16px;
-}
-
-.result-icon { font-size: 56px; margin-bottom: 6px; }
-.result-container h2 { color: #fff; font-size: 24px; margin-bottom: 2px; }
-.result-container p { color: #88ddff; margin-bottom: 12px; font-size: 14px; }
-
-.result-stats {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 8px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    color: #88ddff;
-    font-size: 13px;
-}
-
-.result-stats span { color: #ffcc44; font-weight: bold; }
-
-/* === ВЕРФЬ & МИССИИ === */
-#shipyardList, #missionsList {
-    max-height: 350px;
-    overflow-y: auto;
-    margin: 8px 0;
-}
-
-.shipyard-item, .mission-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 8px 12px;
-    border-radius: 10px;
-    margin-bottom: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.shipyard-item .ship-info,
-.mission-item .mission-info { flex: 1; text-align: left; }
-
-.shipyard-item .ship-name,
-.mission-item .mission-title { color: #fff; font-size: 13px; font-weight: 600; }
-
-.shipyard-item .ship-level,
-.mission-item .mission-desc { color: #88ddff; font-size: 11px; }
-
-.shipyard-item .upgrade-btn {
-    background: linear-gradient(135deg, #2a6aaa, #1a4a8a);
-    border: none;
-    color: white;
-    padding: 3px 12px;
-    border-radius: 8px;
-    font-size: 11px;
-    cursor: pointer;
-}
-
-.shipyard-item .upgrade-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* === АДАПТИВ === */
-@media (max-width: 400px) {
-    .cell.ship::after { font-size: 11px; }
-    .cell.hit::before { font-size: 14px; }
-    .cell.miss::after { font-size: 16px; }
-    .cell.fog::after { font-size: 10px; }
-    .board-container { padding: 3px; }
-    .status { font-size: 12px; padding: 6px; min-height: 30px; }
-    .menu-btn { padding: 10px; font-size: 13px; }
-    .game-header span { font-size: 13px; }
-}
-
-@media (max-width: 360px) {
-    .cell.ship::after { font-size: 9px; }
-    .cell.hit::before { font-size: 12px; }
-    .cell.miss::after { font-size: 14px; }
-    .cell.fog::after { font-size: 8px; }
-    .boards-wrapper { gap: 4px; }
-    .board-title { font-size: 8px; }
-    .scores { font-size: 10px; }
-}
-
-@media (max-height: 700px) {
-    .game-container { padding: 6px; }
-    .scores { padding: 2px 6px; font-size: 10px; }
-    .status { font-size: 11px; padding: 4px 8px; min-height: 26px; }
-    .game-header span { font-size: 12px; }
-    .back-btn { font-size: 20px; }
-    .board-title { font-size: 8px; margin-bottom: 2px; }
-    .cell.ship::after { font-size: 10px; }
-    .cell.hit::before { font-size: 14px; }
-}
 /* === ПРИЦЕЛ === */
 .cell .crosshair {
     position: absolute;
@@ -825,7 +680,6 @@ body {
     opacity: 1;
 }
 
-/* Прицел при наведении на врага */
 .cell.fog:hover .crosshair,
 .cell:not(.hit):not(.miss):hover .crosshair {
     opacity: 1;
@@ -835,3 +689,56 @@ body {
     background: rgba(30, 80, 130, 0.4);
     border-color: rgba(100, 200, 255, 0.2);
 }
+
+/* === СТАТУС === */
+.status {
+    text-align: center;
+    padding: 8px;
+    font-size: 13px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    margin-top: 6px;
+    min-height: 34px;
+    color: #aaddff;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* === КНОПКИ === */
+.btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.btn {
+    background: rgba(42, 106, 170, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #aaddff;
+    padding: 5px 14px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+
+.btn:active { transform: scale(0.93); background: rgba(42, 106, 170, 0.35); }
+
+/* === НАСТРОЙКИ === */
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #aaddff;
+    font-size: 14px;
+}
+
+.setting-item select,
+.setting-item input {
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    border: 1px
