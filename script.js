@@ -327,15 +327,21 @@ function render() {
                 var size = getShipSize(r, c, playerBoard);
                 cell1.dataset.size = size;
                 
-                if (size >= 3) {
+                // Труба для 2,3,4 палубных
+                if (size >= 2) {
                     var detail = document.createElement('div');
                     detail.className = 'ship-detail';
                     cell1.appendChild(detail);
                 }
+                // Флаг для 4-палубных
                 if (size >= 4) {
                     var flag = document.createElement('div');
                     flag.className = 'ship-flag';
                     cell1.appendChild(flag);
+                    
+                    var bow = document.createElement('div');
+                    bow.className = 'ship-bow';
+                    cell1.appendChild(bow);
                 }
             } else if (val === 2) {
                 cell1.classList.add('hit');
@@ -376,6 +382,7 @@ function render() {
     document.getElementById('p1Ships').textContent = playerShips;
     document.getElementById('p2Ships').textContent = enemyShips;
     document.getElementById('moveCounter').textContent = moves;
+}
 }
 
 // === ВЫСТРЕЛ ===
