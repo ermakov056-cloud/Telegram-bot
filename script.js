@@ -14,7 +14,9 @@ let moves = 0;
 let currentGameShots = 0;
 let currentGameHits = 0;
 
-const shipSizes = [5, 4, 3, 3, 2, 2, 2, 1, 1, 1];
+// === КОРАБЛИ (классический набор) ===
+// 1x4, 2x3, 3x2, 4x1 = 20 клеток
+const shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
 
 // === ПРОФИЛЬ ===
 let profile = {
@@ -79,7 +81,7 @@ function playSound(type) {
             osc.start(audioCtx.currentTime);
             osc.stop(audioCtx.currentTime + 0.12);
         } else if (type === 'win') {
-            [523, 659, 784].forEach((freq, i) => {
+            [523, 659, 784].forEach(function(freq, i) {
                 const o = audioCtx.createOscillator();
                 const g = audioCtx.createGain();
                 o.connect(g);
@@ -140,34 +142,41 @@ function updateUI() {
     document.getElementById('playerRating').textContent = profile.rating;
     document.getElementById('winsDisplay').textContent = profile.wins;
     document.getElementById('lossesDisplay').textContent = profile.losses;
-    const acc = profile.shots > 0 ? Math.round(profile.hits/profile.shots*100) : 0;
+    var acc = profile.shots > 0 ? Math.round(profile.hits/profile.shots*100) : 0;
     document.getElementById('accuracyDisplay').textContent = acc + '%';
     
-    let rank = ranks[0];
-    for (let r of ranks) {
-        if (profile.rating >= r.minRating) rank = r;
+    var rank = ranks[0];
+    for (var i = 0; i < ranks.length; i++) {
+        if (profile.rating >= ranks[i].minRating) rank = ranks[i];
     }
     document.getElementById('playerRank').textContent = rank.title;
 }
 
 // === ИГРОВАЯ ЛОГИКА ===
 function createEmptyBoard() {
-    return Array.from({length: SIZE}, () => Array(SIZE).fill(0));
+    var board = [];
+    for (var i = 0; i < SIZE; i++) {
+        board.push([]);
+        for (var j = 0; j < SIZE; j++) {
+            board[i].push(0);
+        }
+    }
+    return board;
 }
 
 function canPlace(board, row, col, size, horizontal) {
-    for (let i = -1; i < size + 1; i++) {
-        for (let j = -1; j < 2; j++) {
-            let r = row + (horizontal ? i : j);
-            let c = col + (horizontal ? j : i);
+    for (var i = -1; i < size + 1; i++) {
+        for (var j = -1; j < 2; j++) {
+            var r = row + (horizontal ? i : j);
+            var c = col + (horizontal ? j : i);
             if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) {
                 if (board[r][c] !== 0) return false;
             }
         }
     }
-    for (let i = 0; i < size; i++) {
-        let r = row + (horizontal ? 0 : i);
-        let c = col + (horizontal ? i : 0);
+    for (var k = 0; k < size; k++) {
+        var r = row + (horizontal ? 0 : k);
+        var c = col + (horizontal ? k : 0);
         if (r >= SIZE || c >= SIZE) return false;
         if (board[r][c] !== 0) return false;
     }
@@ -175,18 +184,19 @@ function canPlace(board, row, col, size, horizontal) {
 }
 
 function placeShips(board) {
-    let ships = [...shipSizes];
-    for (let size of ships) {
-        let placed = false;
-        let attempts = 0;
+    var ships = shipSizes.slice();
+    for (var s = 0; s < ships.length; s++) {
+        var size = ships[s];
+        var placed = false;
+        var attempts = 0;
         while (!placed && attempts < 1000) {
             attempts++;
-            let row = Math.floor(Math.random() * SIZE);
-            let col = Math.floor(Math.random() * SIZE);
-            let horizontal = Math.random() > 0.5;
+            var row = Math.floor(Math.random() * SIZE);
+            var col = Math.floor(Math.random() * SIZE);
+            var horizontal = Math.random() > 0.5;
             if (canPlace(board, row, col, size, horizontal)) {
-                for (let i = 0; i < size; i++) {
-                    board[row + (horizontal ? 0 : i)][col + (horizontal ? i : 0)] = 1;
+                for (var k = 0; k < size; k++) {
+                    board[row + (horizontal ? 0 : k)][col + (horizontal ? k : 0)] = 1;
                 }
                 placed = true;
             }
@@ -200,7 +210,10 @@ function placeShips(board) {
 }
 
 function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    var screens = document.querySelectorAll('.screen');
+    for (var i = 0; i < screens.length; i++) {
+        screens[i].classList.remove('active');
+    }
     document.getElementById(id).classList.add('active');
     if (id === 'shipyard') renderShipyard();
     if (id === 'missions') renderMissions();
@@ -227,7 +240,10 @@ function resetGame() {
     placeShips(playerBoard);
     placeShips(enemyBoard);
     
-    playerShips = shipSizes.reduce((a,b) => a+b, 0);
+    playerShips = 0;
+    for (var i = 0; i < shipSizes.length; i++) {
+        playerShips += shipSizes[i];
+    }
     enemyShips = playerShips;
     gameOver = false;
     isPlayerTurn = true;
@@ -242,47 +258,51 @@ function resetGame() {
 }
 
 function getShipSize(row, col, board) {
-    let hCount = 1;
-    for (let i = col + 1; i < SIZE && board[row][i] === 1; i++) hCount++;
-    for (let i = col - 1; i >= 0 && board[row][i] === 1; i--) hCount++;
-    let vCount = 1;
-    for (let i = row + 1; i < SIZE && board[i][col] === 1; i++) vCount++;
-    for (let i = row - 1; i >= 0 && board[i][col] === 1; i--) vCount++;
-    return Math.min(Math.max(hCount, vCount), 5);
+    var hCount = 1;
+    for (var i = col + 1; i < SIZE && board[row][i] === 1; i++) hCount++;
+    for (var i = col - 1; i >= 0 && board[row][i] === 1; i--) hCount++;
+    var vCount = 1;
+    for (var i = row + 1; i < SIZE && board[i][col] === 1; i++) vCount++;
+    for (var i = row - 1; i >= 0 && board[i][col] === 1; i--) vCount++;
+    var size = Math.max(hCount, vCount);
+    if (size > 4) size = 4;
+    return size;
 }
 
 function render() {
-    const p1Board = document.getElementById('playerBoard');
-    const p2Board = document.getElementById('enemyBoard');
+    var p1Board = document.getElementById('playerBoard');
+    var p2Board = document.getElementById('enemyBoard');
     
-    const containerWidth = Math.min(window.innerWidth * 0.42, 180);
-    const containerHeight = Math.min(window.innerHeight * 0.35, 280);
-    const containerSize = Math.min(containerWidth, containerHeight);
-    const cellSize = Math.max(16, Math.floor((containerSize - (SIZE - 1) * 2) / SIZE));
-    const gridSize = cellSize * SIZE + (SIZE - 1) * 2;
+    var containerWidth = Math.min(window.innerWidth * 0.42, 180);
+    var containerHeight = Math.min(window.innerHeight * 0.35, 280);
+    var containerSize = Math.min(containerWidth, containerHeight);
+    var cellSize = Math.max(16, Math.floor((containerSize - (SIZE - 1) * 2) / SIZE));
+    var gridSize = cellSize * SIZE + (SIZE - 1) * 2;
     
-    p1Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
-    p1Board.style.gridTemplateRows = `repeat(${SIZE}, ${cellSize}px)`;
+    var gridTemplate = 'repeat(' + SIZE + ', ' + cellSize + 'px)';
+    
+    p1Board.style.gridTemplateColumns = gridTemplate;
+    p1Board.style.gridTemplateRows = gridTemplate;
     p1Board.style.width = gridSize + 'px';
     p1Board.style.height = gridSize + 'px';
     
-    p2Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
-    p2Board.style.gridTemplateRows = `repeat(${SIZE}, ${cellSize}px)`;
+    p2Board.style.gridTemplateColumns = gridTemplate;
+    p2Board.style.gridTemplateRows = gridTemplate;
     p2Board.style.width = gridSize + 'px';
     p2Board.style.height = gridSize + 'px';
     
     p1Board.innerHTML = '';
     p2Board.innerHTML = '';
     
-    for (let r = 0; r < SIZE; r++) {
-        for (let c = 0; c < SIZE; c++) {
+    for (var r = 0; r < SIZE; r++) {
+        for (var c = 0; c < SIZE; c++) {
             // Своё поле
-            const cell1 = document.createElement('div');
+            var cell1 = document.createElement('div');
             cell1.className = 'cell';
             cell1.dataset.row = r;
             cell1.dataset.col = c;
             
-            const val = playerBoard[r][c];
+            var val = playerBoard[r][c];
             if (val === 1) {
                 cell1.classList.add('ship');
                 cell1.dataset.size = getShipSize(r, c, playerBoard);
@@ -294,12 +314,12 @@ function render() {
             p1Board.appendChild(cell1);
             
             // Поле врага
-            const cell2 = document.createElement('div');
+            var cell2 = document.createElement('div');
             cell2.className = 'cell';
             cell2.dataset.row = r;
             cell2.dataset.col = c;
             
-            const v = enemyVisible[r][c];
+            var v = enemyVisible[r][c];
             if (v === 2) {
                 cell2.classList.add('hit');
             } else if (v === 3) {
@@ -319,7 +339,7 @@ function render() {
 // === ВЫСТРЕЛ ===
 function makeShot(row, col) {
     if (gameOver) {
-        document.getElementById('status').textContent = '🏁 Игра окончена!';
+        document.getElementById('status').textContent = '🏁 Игра окончена! Начни новую';
         return;
     }
     if (!isPlayerTurn) {
@@ -353,7 +373,9 @@ function makeShot(row, col) {
             updateUI();
             render();
             playSound('win');
-            setTimeout(() => showResult(true), 300);
+            setTimeout(function() {
+                showResult(true);
+            }, 400);
             return;
         }
         render();
@@ -368,7 +390,10 @@ function makeShot(row, col) {
         render();
         updateUI();
         isPlayerTurn = false;
-        setTimeout(() => computerTurn(), 500);
+        
+        setTimeout(function() {
+            computerTurn();
+        }, 500);
     }
 }
 
@@ -377,8 +402,8 @@ function computerTurn() {
     if (gameOver) return;
     document.getElementById('turnIndicator').textContent = '🤖';
     
-    let row, col;
-    let attempts = 0;
+    var row, col;
+    var attempts = 0;
     do {
         row = Math.floor(Math.random() * SIZE);
         col = Math.floor(Math.random() * SIZE);
@@ -389,22 +414,29 @@ function computerTurn() {
         playerBoard[row][col] = 2;
         playerShips--;
         playSound('hit');
-        document.getElementById('status').textContent = `💥 Враг попал в ${String.fromCharCode(65+col)}${row+1}!`;
+        var coords = String.fromCharCode(65 + col) + (row + 1);
+        document.getElementById('status').textContent = '💥 Враг попал в ' + coords + '!';
+        
         if (playerShips === 0) {
             gameOver = true;
             profile.losses++;
             saveProfile();
             render();
             updateUI();
-            setTimeout(() => showResult(false), 300);
+            setTimeout(function() {
+                showResult(false);
+            }, 400);
             return;
         }
         render();
-        setTimeout(() => computerTurn(), 400);
+        setTimeout(function() {
+            computerTurn();
+        }, 400);
     } else {
         playerBoard[row][col] = 3;
         playSound('miss');
-        document.getElementById('status').textContent = `🌊 Враг промахнулся по ${String.fromCharCode(65+col)}${row+1}`;
+        var coords = String.fromCharCode(65 + col) + (row + 1);
+        document.getElementById('status').textContent = '🌊 Враг промахнулся по ' + coords;
         document.getElementById('turnIndicator').textContent = '🎯';
         isPlayerTurn = true;
         render();
@@ -419,7 +451,7 @@ function showResult(won) {
     document.getElementById('resultTitle').textContent = won ? 'Победа!' : 'Поражение...';
     document.getElementById('resultDetail').textContent = won ? 'Вы уничтожили все корабли!' : 'Вы проиграли...';
     document.getElementById('resultShots').textContent = currentGameShots;
-    const acc = currentGameShots > 0 ? Math.round(currentGameHits/currentGameShots*100) : 0;
+    var acc = currentGameShots > 0 ? Math.round(currentGameHits / currentGameShots * 100) : 0;
     document.getElementById('resultAccuracy').textContent = acc + '%';
 }
 
@@ -430,43 +462,56 @@ function closeResult() {
 
 // === ВЕРФЬ ===
 function renderShipyard() {
-    const container = document.getElementById('shipyardList');
+    var container = document.getElementById('shipyardList');
     if (!container) return;
     container.innerHTML = '';
     
-    shipyard.ships.forEach(ship => {
-        const item = document.createElement('div');
+    for (var i = 0; i < shipyard.ships.length; i++) {
+        var ship = shipyard.ships[i];
+        var item = document.createElement('div');
         item.className = 'shipyard-item';
-        const cost = ship.level * 50 + ship.price;
-        const canUpgrade = ship.owned && profile.rating >= cost;
-        const canBuy = !ship.owned && profile.rating >= ship.price;
+        var cost = ship.level * 50 + ship.price;
+        var canUpgrade = ship.owned && profile.rating >= cost;
+        var canBuy = !ship.owned && profile.rating >= ship.price;
         
-        item.innerHTML = `
-            <div class="ship-info">
-                <div class="ship-name">${ship.name}</div>
-                <div class="ship-level">Уровень ${ship.level} ${ship.owned ? '✅' : '🔒'} | ⚔️${ship.damage} ❤️${ship.hp}</div>
-            </div>
-            <button class="upgrade-btn" onclick="upgradeShip(${ship.id})" ${!canUpgrade && !canBuy ? 'disabled' : ''}>
-                ${ship.owned ? `⬆ ${cost}⭐` : `Купить ${ship.price}⭐`}
-            </button>
-        `;
+        var btnText = ship.owned ? '⬆ ' + cost + '⭐' : 'Купить ' + ship.price + '⭐';
+        var disabled = (!canUpgrade && !canBuy) ? 'disabled' : '';
+        
+        item.innerHTML = 
+            '<div class="ship-info">' +
+                '<div class="ship-name">' + ship.name + '</div>' +
+                '<div class="ship-level">Уровень ' + ship.level + ' ' + (ship.owned ? '✅' : '🔒') + ' | ⚔️' + ship.damage + ' ❤️' + ship.hp + '</div>' +
+            '</div>' +
+            '<button class="upgrade-btn" onclick="upgradeShip(' + ship.id + ')" ' + disabled + '>' + btnText + '</button>';
         container.appendChild(item);
-    });
+    }
 }
 
 window.upgradeShip = function(id) {
-    const ship = shipyard.ships.find(s => s.id === id);
+    var ship = null;
+    for (var i = 0; i < shipyard.ships.length; i++) {
+        if (shipyard.ships[i].id === id) {
+            ship = shipyard.ships[i];
+            break;
+        }
+    }
     if (!ship) return;
     
     if (!ship.owned) {
-        if (profile.rating < ship.price) return alert('Недостаточно рейтинга!');
+        if (profile.rating < ship.price) {
+            alert('Недостаточно рейтинга!');
+            return;
+        }
         profile.rating -= ship.price;
         ship.owned = true;
         ship.level = 1;
     } else {
-        const c = ship.level * 50 + ship.price;
-        if (profile.rating < c) return alert('Недостаточно рейтинга!');
-        profile.rating -= c;
+        var cost = ship.level * 50 + ship.price;
+        if (profile.rating < cost) {
+            alert('Недостаточно рейтинга!');
+            return;
+        }
+        profile.rating -= cost;
         ship.level++;
         ship.damage = Math.floor(ship.damage * 1.2);
         ship.hp = Math.floor(ship.hp * 1.15);
@@ -478,30 +523,30 @@ window.upgradeShip = function(id) {
 
 // === МИССИИ ===
 function renderMissions() {
-    const container = document.getElementById('missionsList');
+    var container = document.getElementById('missionsList');
     if (!container) return;
     container.innerHTML = '';
     
-    missions.forEach(m => {
-        const item = document.createElement('div');
+    for (var i = 0; i < missions.length; i++) {
+        var m = missions[i];
+        var item = document.createElement('div');
         item.className = 'mission-item';
-        const progress = Math.min(m.progress, m.target);
-        const done = progress >= m.target;
+        var progress = Math.min(m.progress, m.target);
+        var done = progress >= m.target;
         
-        item.innerHTML = `
-            <div class="mission-info">
-                <div class="mission-title">${m.icon} ${m.title} ${done ? '✅' : ''}</div>
-                <div class="mission-desc">${m.desc} (${progress}/${m.target})</div>
-            </div>
-            <div style="color:#4af;font-size:12px;">+${m.reward}⭐</div>
-        `;
+        item.innerHTML = 
+            '<div class="mission-info">' +
+                '<div class="mission-title">' + m.icon + ' ' + m.title + ' ' + (done ? '✅' : '') + '</div>' +
+                '<div class="mission-desc">' + m.desc + ' (' + progress + '/' + m.target + ')</div>' +
+            '</div>' +
+            '<div style="color:#4af;font-size:12px;">+' + m.reward + '⭐</div>';
         container.appendChild(item);
-    });
+    }
 }
 
 // === АВАТАР ===
 function changeAvatar() {
-    const avatars = [
+    var avatars = [
         'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="48" fill="%232a6aaa"/%3E%3Ccircle cx="50" cy="35" r="20" fill="%234a8aca"/%3E%3Ccircle cx="35" cy="30" r="4" fill="%23ffffff"/%3E%3Ccircle cx="65" cy="30" r="4" fill="%23ffffff"/%3E%3Cpath d="M35 50 Q50 65 65 50" stroke="%23ffffff" stroke-width="3" fill="none"/%3E%3C/svg%3E',
         'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="48" fill="%23aa2a2a"/%3E%3Ccircle cx="50" cy="35" r="20" fill="%23ca4a4a"/%3E%3Ccircle cx="35" cy="30" r="4" fill="%23ffffff"/%3E%3Ccircle cx="65" cy="30" r="4" fill="%23ffffff"/%3E%3Cpath d="M35 55 Q50 40 65 55" stroke="%23ffffff" stroke-width="3" fill="none"/%3E%3C/svg%3E',
         'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="48" fill="%232aaa6a"/%3E%3Ccircle cx="50" cy="35" r="20" fill="%234acaaa"/%3E%3Ccircle cx="35" cy="30" r="4" fill="%23ffffff"/%3E%3Ccircle cx="65" cy="30" r="4" fill="%23ffffff"/%3E%3Cpath d="M35 50 Q50 65 65 50" stroke="%23ffffff" stroke-width="3" fill="none"/%3E%3C/svg%3E'
@@ -512,14 +557,14 @@ function changeAvatar() {
     saveProfile();
 }
 
-// === ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ===
+// === ОБРАБОТЧИКИ СОБЫТИЙ ===
 document.addEventListener('DOMContentLoaded', function() {
     // Клик по полю врага
     document.getElementById('enemyBoard').addEventListener('click', function(e) {
-        const cell = e.target.closest('.cell');
+        var cell = e.target.closest('.cell');
         if (!cell) return;
-        const row = parseInt(cell.dataset.row);
-        const col = parseInt(cell.dataset.col);
+        var row = parseInt(cell.dataset.row);
+        var col = parseInt(cell.dataset.col);
         if (isNaN(row) || isNaN(col)) return;
         if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
         makeShot(row, col);
@@ -530,12 +575,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (gameMode !== 'pvp') return;
         if (gameOver) return;
         if (isPlayerTurn) return;
-        const cell = e.target.closest('.cell');
+        
+        var cell = e.target.closest('.cell');
         if (!cell) return;
-        const row = parseInt(cell.dataset.row);
-        const col = parseInt(cell.dataset.col);
+        var row = parseInt(cell.dataset.row);
+        var col = parseInt(cell.dataset.col);
         if (isNaN(row) || isNaN(col)) return;
         if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
+        
         if (playerBoard[row][col] === 2 || playerBoard[row][col] === 3) {
             document.getElementById('status').textContent = '⚠️ Сюда уже стреляли!';
             return;
@@ -552,7 +599,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveProfile();
                 render();
                 updateUI();
-                setTimeout(() => showResult(false, 'Игрок 2 победил!'), 300);
+                setTimeout(function() {
+                    showResult(false);
+                }, 300);
                 return;
             }
             document.getElementById('status').textContent = '💥 Попадание! Ещё ход!';
@@ -604,26 +653,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (tg) {
         tg.onEvent('backButtonClicked', function() {
-            const active = document.querySelector('.screen.active');
+            var active = document.querySelector('.screen.active');
             if (active) {
-                if (active.id === 'game') backToMenu();
-                else if (active.id === 'settings') { saveSettings(); showScreen('menu'); }
-                else if (active.id === 'shipyard' || active.id === 'missions') showScreen('menu');
-                else if (active.id === 'result') showScreen('menu');
-                else tg.close();
+                if (active.id === 'game') {
+                    backToMenu();
+                } else if (active.id === 'settings') {
+                    saveSettings();
+                    showScreen('menu');
+                } else if (active.id === 'shipyard' || active.id === 'missions') {
+                    showScreen('menu');
+                } else if (active.id === 'result') {
+                    showScreen('menu');
+                } else {
+                    tg.close();
+                }
             }
         });
         tg.BackButton.show();
     }
     
     window.addEventListener('resize', function() {
-        if (document.getElementById('game').classList.contains('active')) render();
+        if (document.getElementById('game').classList.contains('active')) {
+            render();
+        }
     });
 });
 
 // === Тема Telegram ===
 if (tg) {
-    const theme = tg.themeParams;
+    var theme = tg.themeParams;
     if (theme) {
         document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color || '#0a1628');
         document.documentElement.style.setProperty('--tg-theme-text-color', theme.text_color || '#ffffff');
