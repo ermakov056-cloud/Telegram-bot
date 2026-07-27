@@ -241,6 +241,16 @@ function resetGame() {
     render();
 }
 
+function getShipSize(row, col, board) {
+    let hCount = 1;
+    for (let i = col + 1; i < SIZE && board[row][i] === 1; i++) hCount++;
+    for (let i = col - 1; i >= 0 && board[row][i] === 1; i--) hCount++;
+    let vCount = 1;
+    for (let i = row + 1; i < SIZE && board[i][col] === 1; i++) vCount++;
+    for (let i = row - 1; i >= 0 && board[i][col] === 1; i--) vCount++;
+    return Math.min(Math.max(hCount, vCount), 5);
+}
+
 function render() {
     const p1Board = document.getElementById('playerBoard');
     const p2Board = document.getElementById('enemyBoard');
@@ -251,10 +261,15 @@ function render() {
     const cellSize = Math.max(16, Math.floor((containerSize - (SIZE - 1) * 2) / SIZE));
     const gridSize = cellSize * SIZE + (SIZE - 1) * 2;
     
-    p1Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
+    const gridTemplate = `repeat(${SIZE}, ${cellSize}px)`;
+    
+    p1Board.style.gridTemplateColumns = gridTemplate;
+    p1Board.style.gridTemplateRows = gridTemplate;
     p1Board.style.width = gridSize + 'px';
     p1Board.style.height = gridSize + 'px';
-    p2Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
+    
+    p2Board.style.gridTemplateColumns = gridTemplate;
+    p2Board.style.gridTemplateRows = gridTemplate;
     p2Board.style.width = gridSize + 'px';
     p2Board.style.height = gridSize + 'px';
     
@@ -264,14 +279,15 @@ function render() {
     for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
             // Своё поле
-            let cell1 = document.createElement('div');
+            const cell1 = document.createElement('div');
             cell1.className = 'cell';
-            let val = playerBoard[r][c];
+            cell1.dataset.row = r;
+            cell1.dataset.col = c;
             
+            const val = playerBoard[r][c];
             if (val === 1) {
                 cell1.classList.add('ship');
-                let size = getShipSize(r, c, playerBoard);
-                cell1.dataset.size = size;
+                cell1.dataset.size = getShipSize(r, c, playerBoard);
             } else if (val === 2) {
                 cell1.classList.add('hit');
             } else if (val === 3) {
@@ -280,10 +296,12 @@ function render() {
             p1Board.appendChild(cell1);
             
             // Поле врага
-            let cell2 = document.createElement('div');
+            const cell2 = document.createElement('div');
             cell2.className = 'cell';
-            let v = enemyVisible[r][c];
+            cell2.dataset.row = r;
+            cell2.dataset.col = c;
             
+            const v = enemyVisible[r][c];
             if (v === 2) {
                 cell2.classList.add('hit');
             } else if (v === 3) {
@@ -291,9 +309,6 @@ function render() {
             } else {
                 cell2.classList.add('fog');
             }
-            
-            cell2.setAttribute('data-row', r);
-            cell2.setAttribute('data-col', c);
             p2Board.appendChild(cell2);
         }
     }
@@ -303,39 +318,14 @@ function render() {
     document.getElementById('moveCounter').textContent = moves;
 }
 
-function getShipSize(row, col, board) {
-    let size = 1;
-    let hCount = 1;
-    for (let i = col + 1; i < SIZE && board[row][i] === 1; i++) hCount++;
-    for (let i = col - 1; i >= 0 && board[row][i] === 1; i--) hCount++;
-    let vCount = 1;
-    for (let i = row + 1; i < SIZE && board[i][col] === 1; i++) vCount++;
-    for (let i = row - 1; i >= 0 && board[i][col] === 1; i--) vCount++;
-    size = Math.max(hCount, vCount);
-    return Math.min(size, 5);
-}
-
-// === ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ===
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('enemyBoard').addEventListener('click', function(e) {
-        let cell = e.target.closest('.cell');
-        if (!cell) return;
-        let row = parseInt(cell.getAttribute('data-row'));
-        let col = parseInt(cell.getAttribute('data-col'));
-        if (!isNaN(row) && !isNaN(col)) {
-            makeShot(row, col);
-        }
-    });
-});
-
 // === ВЫСТРЕЛ ===
 function makeShot(row, col) {
     if (gameOver) {
-        document.getElementById('status').textContent = '🏁 Игра окончена! Начни новую';
+        document.getElementById('status').textContent = '🏁 Игра окончена!';
         return;
     }
     if (!isPlayerTurn) {
-        document.getElementById('status').textContent = '⏳ Сейчас ход противника...';
+        document.getElementById('status').textContent = '⏳ Ход противника...';
         return;
     }
     if (enemyVisible[row][col] !== 0) {
@@ -365,7 +355,7 @@ function makeShot(row, col) {
             updateUI();
             render();
             playSound('win');
-            setTimeout(() => showResult(true), 400);
+            setTimeout(() => showResult(true), 300);
             return;
         }
         render();
@@ -380,7 +370,6 @@ function makeShot(row, col) {
         render();
         updateUI();
         isPlayerTurn = false;
-        
         setTimeout(() => computerTurn(), 500);
     }
 }
@@ -409,7 +398,7 @@ function computerTurn() {
             saveProfile();
             render();
             updateUI();
-            setTimeout(() => showResult(false), 400);
+            setTimeout(() => showResult(false), 300);
             return;
         }
         render();
@@ -524,6 +513,73 @@ function changeAvatar() {
     document.getElementById('avatarImg').src = avatars[profile.avatar];
     saveProfile();
 }
+
+// === ДЕЛЕГИРОВАНИЕ СОБЫТИЙ (ОДИН РАЗ) ===
+document.addEventListener('DOMContentLoaded', function() {
+    // Клик по полю врага
+    document.getElementById('enemyBoard').addEventListener('click', function(e) {
+        const cell = e.target.closest('.cell');
+        if (!cell) return;
+        
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        
+        if (isNaN(row) || isNaN(col)) return;
+        if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
+        
+        makeShot(row, col);
+    });
+    
+    // Клик по своему полю (для PvP)
+    document.getElementById('playerBoard').addEventListener('click', function(e) {
+        if (gameMode !== 'pvp') return;
+        if (gameOver) return;
+        if (isPlayerTurn) return; // Игрок 2 ходит когда isPlayerTurn = false
+        
+        const cell = e.target.closest('.cell');
+        if (!cell) return;
+        
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        
+        if (isNaN(row) || isNaN(col)) return;
+        if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
+        
+        // Проверка что клетка не обстреляна
+        if (playerBoard[row][col] === 2 || playerBoard[row][col] === 3) {
+            document.getElementById('status').textContent = '⚠️ Сюда уже стреляли!';
+            return;
+        }
+        
+        // Ход игрока 2
+        moves++;
+        if (playerBoard[row][col] === 1) {
+            playerBoard[row][col] = 2;
+            playerShips--;
+            playSound('hit');
+            if (playerShips === 0) {
+                gameOver = true;
+                profile.losses++;
+                saveProfile();
+                render();
+                updateUI();
+                setTimeout(() => showResult(false, 'Игрок 2 победил!'), 300);
+                return;
+            }
+            document.getElementById('status').textContent = '💥 Попадание! Ещё ход!';
+            render();
+            updateUI();
+        } else {
+            playerBoard[row][col] = 3;
+            playSound('miss');
+            document.getElementById('status').textContent = '🌊 Промах! Ход игрока 1';
+            document.getElementById('turnIndicator').textContent = '🎯';
+            isPlayerTurn = true;
+            render();
+            updateUI();
+        }
+    });
+});
 
 // === ИНИЦИАЛИЗАЦИЯ ===
 document.addEventListener('DOMContentLoaded', function() {
