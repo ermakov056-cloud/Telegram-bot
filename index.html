@@ -2,93 +2,133 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Морской бой</title>
-    <!-- Подключаем Telegram SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app">
         <!-- Меню -->
-        <div id="menu" class="screen">
+        <div id="menu" class="screen active">
             <div class="menu-container">
                 <div class="tg-header">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%234af' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5z'/%3E%3Cpath d='M2 17l10 5 10-5'/%3E%3Cpath d='M2 12l10 5 10-5'/%3E%3C/svg%3E" alt="⚓" class="logo">
+                    <span class="logo">⚓</span>
                     <h1>Морской бой</h1>
                 </div>
+                
                 <div class="menu-stats">
                     <div>🏆 <span id="winsDisplay">0</span></div>
                     <div>💀 <span id="lossesDisplay">0</span></div>
                     <div>🎯 <span id="accuracyDisplay">0%</span></div>
                 </div>
+                
                 <button class="menu-btn primary" onclick="startGame('ai')">🤖 Против ИИ</button>
                 <button class="menu-btn" onclick="startGame('pvp')">👥 С другом</button>
                 <button class="menu-btn secondary" onclick="openSettings()">⚙️ Настройки</button>
+                <button class="menu-btn secondary" onclick="showTutorial()">📖 Как играть</button>
                 <button class="menu-btn secondary" onclick="shareScore()">📤 Поделиться</button>
             </div>
         </div>
 
         <!-- Игра -->
-        <div id="game" class="screen" style="display:none">
+        <div id="game" class="screen">
             <div class="game-container">
                 <div class="game-header">
-                    <button class="back-btn" onclick="backToMenu()">←</button>
+                    <button class="back-btn" onclick="backToMenu()">‹</button>
                     <span id="gameTitle">⚓ Морской бой</span>
                     <span id="turnIndicator" class="turn-indicator">🎯</span>
                 </div>
+                
                 <div class="scores">
-                    <div>Ваши: <span id="p1Ships">0</span></div>
-                    <div>Врага: <span id="p2Ships">0</span></div>
+                    <div>🚢 <span id="p1Ships">0</span></div>
+                    <div>💥 <span id="p2Ships">0</span></div>
+                    <div>🎯 <span id="moveCounter">0</span></div>
                 </div>
+                
                 <div class="boards">
                     <div class="board-container">
                         <div class="board-title">Ваше поле</div>
                         <div class="board" id="playerBoard"></div>
                     </div>
                     <div class="board-container">
-                        <div class="board-title" id="enemyBoardTitle">Поле противника</div>
+                        <div class="board-title" id="enemyBoardTitle">🌊 Поле боя</div>
                         <div class="board" id="enemyBoard"></div>
                     </div>
                 </div>
+                
                 <div class="status" id="status">Нажми на клетку чтобы выстрелить</div>
+                
                 <div class="btn-group">
                     <button class="btn small" onclick="resetGame()">🔄 Новая</button>
-                    <button class="btn small" onclick="toggleColors()">🎨 Цвета</button>
+                    <button class="btn small" onclick="toggleFog()">🌫️ Туман</button>
+                    <button class="btn small" onclick="toggleSound()">🔊 Звук</button>
                 </div>
             </div>
         </div>
 
         <!-- Настройки -->
-        <div id="settings" class="screen" style="display:none">
+        <div id="settings" class="screen">
             <div class="menu-container">
                 <h2>⚙️ Настройки</h2>
+                
                 <div class="setting-item">
-                    <label>Размер поля</label>
+                    <label>📏 Размер поля</label>
                     <select id="sizeSelect" onchange="saveSettings()">
                         <option value="6">6×6</option>
                         <option value="8" selected>8×8</option>
                         <option value="10">10×10</option>
                     </select>
                 </div>
+                
                 <div class="setting-item">
-                    <label>Сложность ИИ</label>
+                    <label>🎯 Сложность ИИ</label>
                     <select id="difficultySelect" onchange="saveSettings()">
                         <option value="easy">😊 Лёгкий</option>
                         <option value="medium" selected>🤔 Средний</option>
                         <option value="hard">😈 Сложный</option>
+                        <option value="nightmare">👹 Кошмар</option>
                     </select>
                 </div>
+                
                 <div class="setting-item">
-                    <label>Показывать корабли</label>
-                    <input type="checkbox" id="showShips" checked onchange="saveSettings()">
+                    <label>🌫️ Туман войны</label>
+                    <input type="checkbox" id="fogToggle" checked onchange="saveSettings()">
                 </div>
+                
+                <div class="setting-item">
+                    <label>🔊 Звуки</label>
+                    <input type="checkbox" id="soundToggle" checked onchange="saveSettings()">
+                </div>
+                
+                <div class="setting-item">
+                    <label>🎨 Показывать корабли</label>
+                    <input type="checkbox" id="showShips" onchange="saveSettings()">
+                </div>
+                
                 <button class="menu-btn secondary" onclick="closeSettings()">← Назад</button>
             </div>
         </div>
 
+        <!-- Обучение -->
+        <div id="tutorial" class="screen">
+            <div class="menu-container">
+                <h2>📖 Как играть</h2>
+                <div class="tutorial-content">
+                    <p>🎯 <strong>Цель:</strong> Уничтожить все корабли противника</p>
+                    <p>🚢 <strong>Корабли:</strong> 3, 2, 2, 1, 1, 1 (всего 10 клеток)</p>
+                    <p>💥 <strong>Попадание:</strong> Красный крест ✕</p>
+                    <p>🌊 <strong>Промах:</strong> Серая точка ·</p>
+                    <p>🤖 <strong>ИИ:</strong> Чем выше сложность, тем умнее стреляет</p>
+                    <p>👥 <strong>2 игрока:</strong> Играйте по очереди на одном телефоне</p>
+                    <p>🌫️ <strong>Туман:</strong> Скрывает корабли противника</p>
+                </div>
+                <button class="menu-btn primary" onclick="closeTutorial()">Понятно!</button>
+            </div>
+        </div>
+
         <!-- Результат -->
-        <div id="result" class="screen" style="display:none">
+        <div id="result" class="screen">
             <div class="result-container">
                 <div class="result-icon" id="resultIcon">🏆</div>
                 <h2 id="resultTitle">Победа!</h2>
@@ -96,6 +136,7 @@
                 <div class="result-stats">
                     <div>Выстрелов: <span id="resultShots">0</span></div>
                     <div>Точность: <span id="resultAccuracy">0%</span></div>
+                    <div>⭐ Рейтинг: <span id="resultRating">★</span></div>
                 </div>
                 <button class="menu-btn primary" onclick="closeResult()">🔄 Ещё раз</button>
                 <button class="menu-btn secondary" onclick="shareResult()">📤 Поделиться</button>
