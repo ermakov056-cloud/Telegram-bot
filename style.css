@@ -14,46 +14,187 @@ body {
     align-items: flex-start;
     padding: 6px;
     touch-action: manipulation;
-    overflow-x: hidden;
-    background: linear-gradient(180deg, #0a0e27 0%, #1a2a6a 40%, #0d4a7a 70%, #0a6a8a 100%);
+    overflow: hidden;
+    background: #0a1628;
 }
 
-.waves-bg {
+/* === ОКЕАН === */
+.ocean-bg {
     position: fixed;
-    bottom: 0;
+    top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
     z-index: 0;
     overflow: hidden;
 }
 
+.sky {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60%;
+    background: linear-gradient(180deg, #0a1628 0%, #1a3a6a 30%, #2a6a9a 50%, #4a8aba 70%, #6aaada 100%);
+}
+
+.sun {
+    position: absolute;
+    top: 10%;
+    right: 15%;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffdd44, #ff8800);
+    box-shadow: 0 0 80px rgba(255, 200, 50, 0.3);
+    animation: sunGlow 4s ease-in-out infinite;
+}
+
+@keyframes sunGlow {
+    0%, 100% { box-shadow: 0 0 60px rgba(255, 200, 50, 0.2); }
+    50% { box-shadow: 0 0 100px rgba(255, 200, 50, 0.4); }
+}
+
+.cloud {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    animation: cloudMove 20s linear infinite;
+}
+
+.cloud1 {
+    width: 120px;
+    height: 30px;
+    top: 15%;
+    left: -10%;
+    animation-duration: 25s;
+}
+.cloud2 {
+    width: 80px;
+    height: 20px;
+    top: 25%;
+    left: -30%;
+    animation-duration: 30s;
+    animation-delay: -5s;
+}
+.cloud3 {
+    width: 150px;
+    height: 35px;
+    top: 8%;
+    left: -50%;
+    animation-duration: 22s;
+    animation-delay: -10s;
+}
+
+.cloud::before {
+    content: '';
+    position: absolute;
+    width: 50%;
+    height: 200%;
+    background: inherit;
+    border-radius: 50%;
+    top: -50%;
+    left: 10%;
+}
+.cloud::after {
+    content: '';
+    position: absolute;
+    width: 30%;
+    height: 150%;
+    background: inherit;
+    border-radius: 50%;
+    top: -30%;
+    right: 10%;
+}
+
+@keyframes cloudMove {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(150vw); }
+}
+
+.ocean {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background: linear-gradient(180deg, 
+        rgba(20, 80, 140, 0.6) 0%,
+        rgba(10, 50, 100, 0.8) 30%,
+        rgba(5, 30, 70, 0.9) 70%,
+        rgba(2, 15, 40, 1) 100%
+    );
+}
+
 .wave {
     position: absolute;
-    bottom: -10%;
+    bottom: 0;
     left: -50%;
     width: 200%;
     height: 100%;
-    border-radius: 45%;
-    animation: waveMove 8s ease-in-out infinite;
+    border-radius: 40%;
+    animation: waveMove 10s ease-in-out infinite;
 }
 
-.wave1 { background: rgba(255,255,255,0.03); animation-duration: 10s; }
-.wave2 { background: rgba(255,255,255,0.02); animation-duration: 14s; animation-delay: -3s; }
-.wave3 { background: rgba(255,255,255,0.015); animation-duration: 18s; animation-delay: -6s; }
+.wave1 {
+    background: rgba(255, 255, 255, 0.05);
+    animation-duration: 12s;
+    bottom: -5%;
+}
+.wave2 {
+    background: rgba(255, 255, 255, 0.08);
+    animation-duration: 16s;
+    animation-delay: -3s;
+    bottom: -10%;
+}
+.wave3 {
+    background: rgba(255, 255, 255, 0.03);
+    animation-duration: 20s;
+    animation-delay: -6s;
+    bottom: -15%;
+}
+.wave4 {
+    background: rgba(100, 200, 255, 0.04);
+    animation-duration: 14s;
+    animation-delay: -8s;
+    bottom: -20%;
+}
 
 @keyframes waveMove {
     0%, 100% { transform: translateX(0) rotate(0deg); }
-    50% { transform: translateX(20%) rotate(2deg); }
+    50% { transform: translateX(15%) rotate(3deg); }
 }
 
+.ships-bg {
+    position: absolute;
+    bottom: 20%;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.ship-bg {
+    position: absolute;
+    font-size: 40px;
+    opacity: 0.1;
+    animation: shipSail 30s linear infinite;
+}
+
+.ship1 { bottom: 10%; left: -10%; animation-duration: 35s; }
+.ship2 { bottom: 5%; left: -30%; animation-duration: 45s; animation-delay: -10s; }
+
+@keyframes shipSail {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(120vw); }
+}
+
+/* === СТЕКЛО === */
 .glass {
-    background: rgba(10, 14, 39, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    background: rgba(10, 20, 50, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
 }
 
 #app {
@@ -72,7 +213,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* МЕНЮ */
+/* === МЕНЮ === */
 .menu-container {
     padding: 16px 14px;
     border-radius: 16px;
@@ -88,6 +229,7 @@ body {
     background: rgba(0, 0, 0, 0.3);
     border-radius: 14px;
     margin-bottom: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .avatar-container {
@@ -119,7 +261,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border: 2px solid #0a0e27;
+    border: 2px solid #0a1628;
 }
 
 .avatar-edit:active { transform: scale(0.85); }
@@ -138,6 +280,7 @@ body {
     margin-bottom: 12px;
     font-size: 12px;
     color: #88ddff;
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .menu-stats span { color: #ffcc44; font-weight: bold; font-size: 15px; }
@@ -160,6 +303,7 @@ body {
 .menu-btn.primary {
     background: linear-gradient(135deg, #2a6aaa, #1a4a8a);
     color: #fff;
+    box-shadow: 0 4px 20px rgba(42, 106, 170, 0.3);
 }
 
 .menu-btn.secondary {
@@ -168,7 +312,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* ИГРА */
+/* === ИГРА === */
 .game-container { padding: 10px; border-radius: 16px; }
 
 .game-header {
@@ -201,6 +345,7 @@ body {
     margin-bottom: 6px;
     font-size: 12px;
     color: #88ddff;
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .scores span { color: #ffcc44; font-weight: bold; }
@@ -212,12 +357,13 @@ body {
 }
 
 .board-container {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 20, 50, 0.5);
     padding: 4px;
     border-radius: 10px;
     flex: 1;
     min-width: 0;
     max-width: 48%;
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .board-title {
@@ -225,6 +371,8 @@ body {
     text-align: center;
     font-size: 10px;
     margin-bottom: 3px;
+    font-weight: 500;
+    text-shadow: 0 0 10px rgba(68, 170, 255, 0.2);
 }
 
 .board {
@@ -234,54 +382,143 @@ body {
     width: 100%;
 }
 
-/* КЛЕТКИ */
+/* === КЛЕТКИ === */
 .cell {
-    background: rgba(20, 40, 80, 0.5);
+    background: rgba(20, 50, 90, 0.4);
     border-radius: 3px;
     cursor: pointer;
-    transition: all 0.12s;
+    transition: all 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     aspect-ratio: 1;
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    position: relative;
 }
 
 .cell:active { transform: scale(0.85); }
 
+/* === КОРАБЛИ (реалистичные) === */
 .cell.ship {
-    background: linear-gradient(135deg, #4a8a5a, #2a6a3a);
-    box-shadow: inset 0 2px 4px rgba(255,255,255,0.15), 0 2px 8px rgba(42,106,58,0.25);
+    background: transparent;
+    border: none;
 }
 
+.cell.ship::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: 2px;
+    background: linear-gradient(160deg, #4a7a5a, #2a5a3a);
+    box-shadow: 
+        inset 0 2px 4px rgba(255, 255, 255, 0.15),
+        0 2px 8px rgba(42, 106, 58, 0.3),
+        0 0 20px rgba(42, 106, 58, 0.1);
+}
+
+.cell.ship::after {
+    content: '▬';
+    position: absolute;
+    color: rgba(255, 255, 255, 0.12);
+    font-size: 16px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+/* Разные размеры кораблей */
+.cell.ship[data-size="5"]::before {
+    background: linear-gradient(160deg, #5a9a6a, #2a5a3a);
+}
+.cell.ship[data-size="4"]::before {
+    background: linear-gradient(160deg, #4a8a5a, #2a6a3a);
+}
+.cell.ship[data-size="3"]::before {
+    background: linear-gradient(160deg, #4a7a5a, #2a5a3a);
+}
+.cell.ship[data-size="2"]::before {
+    background: linear-gradient(160deg, #5a7a5a, #3a5a3a);
+}
+.cell.ship[data-size="1"]::before {
+    background: radial-gradient(circle at 40% 35%, #6a8a6a, #3a5a3a);
+}
+.cell.ship[data-size="1"]::after {
+    content: '●';
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.15);
+}
+
+/* === ПОПАДАНИЕ === */
 .cell.hit {
-    background: #ff3333;
-    animation: hitAnim 0.4s;
-    box-shadow: 0 0 20px rgba(255,50,50,0.4);
+    background: transparent;
+    border: none;
+    animation: hitAnim 0.5s ease;
 }
 
-.cell.hit::after { content: "✕"; font-size: 14px; color: #fff; }
-
-.cell.miss {
-    background: rgba(20, 60, 100, 0.2);
-    border: 1px solid rgba(100,200,255,0.05);
+.cell.hit::before {
+    content: '✕';
+    position: absolute;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ff3333;
+    text-shadow: 
+        0 0 20px rgba(255, 50, 50, 0.6),
+        0 0 60px rgba(255, 50, 50, 0.3),
+        0 0 100px rgba(255, 50, 50, 0.1);
 }
 
-.cell.miss::after { content: "·"; color: rgba(100,200,255,0.3); font-size: 18px; }
-
-.cell.fog {
-    background: rgba(10, 20, 50, 0.3);
-    border: 1px solid rgba(255,255,255,0.02);
+.cell.hit::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 50, 50, 0.3), transparent 70%);
+    animation: hitGlow 0.6s ease;
 }
 
 @keyframes hitAnim {
-    0% { transform: scale(1.2); background: #ff6666; }
-    50% { transform: scale(0.9); }
-    100% { transform: scale(1); background: #ff3333; }
+    0% { transform: scale(1.5); opacity: 0; }
+    50% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes hitGlow {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+/* === ПРОМАХ === */
+.cell.miss {
+    background: rgba(20, 60, 100, 0.15);
+    border: 1px solid rgba(100, 200, 255, 0.06);
+}
+
+.cell.miss::after {
+    content: '·';
+    color: rgba(100, 200, 255, 0.25);
+    font-size: 20px;
+    animation: missRipple 0.3s ease;
+}
+
+@keyframes missRipple {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+
+/* === ТУМАН === */
+.cell.fog {
+    background: rgba(10, 30, 60, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.cell.fog::after {
+    content: '~';
+    color: rgba(100, 150, 200, 0.06);
+    font-size: 12px;
+}
+
+/* === СТАТУС === */
 .status {
     text-align: center;
     padding: 8px;
@@ -292,8 +529,10 @@ body {
     min-height: 34px;
     color: #aaddff;
     font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+/* === КНОПКИ === */
 .btn-group {
     display: flex;
     justify-content: center;
@@ -302,7 +541,7 @@ body {
 }
 
 .btn {
-    background: rgba(42, 106, 170, 0.3);
+    background: rgba(42, 106, 170, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.06);
     color: #aaddff;
     padding: 5px 14px;
@@ -313,15 +552,15 @@ body {
     transition: all 0.12s;
 }
 
-.btn:active { transform: scale(0.93); background: rgba(42,106,170,0.5); }
+.btn:active { transform: scale(0.93); background: rgba(42, 106, 170, 0.35); }
 
-/* НАСТРОЙКИ */
+/* === НАСТРОЙКИ === */
 .setting-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     color: #aaddff;
     font-size: 14px;
 }
@@ -330,7 +569,7 @@ body {
 .setting-item input {
     background: rgba(0, 0, 0, 0.4);
     color: #fff;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 4px 10px;
     border-radius: 8px;
     font-size: 13px;
@@ -342,7 +581,7 @@ body {
     accent-color: #2a6aaa;
 }
 
-/* РЕЗУЛЬТАТ */
+/* === РЕЗУЛЬТАТ === */
 .result-container {
     padding: 24px 16px;
     border-radius: 16px;
@@ -368,7 +607,7 @@ body {
 
 .result-stats span { color: #ffcc44; font-weight: bold; }
 
-/* ВЕРФЬ & МИССИИ */
+/* === ВЕРФЬ & МИССИИ === */
 #shipyardList, #missionsList {
     max-height: 350px;
     overflow-y: auto;
@@ -383,6 +622,7 @@ body {
     padding: 8px 12px;
     border-radius: 10px;
     margin-bottom: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .shipyard-item .ship-info,
@@ -395,7 +635,7 @@ body {
 .mission-item .mission-desc { color: #88ddff; font-size: 11px; }
 
 .shipyard-item .upgrade-btn {
-    background: #2a6aaa;
+    background: linear-gradient(135deg, #2a6aaa, #1a4a8a);
     border: none;
     color: white;
     padding: 3px 12px;
@@ -406,18 +646,32 @@ body {
 
 .shipyard-item .upgrade-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* АДАПТИВ */
-@media (max-width: 380px) {
-    .cell { font-size: 10px; }
+/* === АДАПТИВ === */
+@media (max-width: 400px) {
+    .cell { font-size: 11px; }
+    .cell.ship::after { font-size: 13px; }
+    .cell.hit::before { font-size: 16px; }
     .board-container { padding: 3px; }
     .status { font-size: 12px; padding: 6px; min-height: 30px; }
     .menu-btn { padding: 10px; font-size: 13px; }
+    .game-header span { font-size: 13px; }
+}
+
+@media (max-width: 360px) {
+    .cell { font-size: 9px; }
+    .cell.ship::after { font-size: 10px; }
+    .cell.hit::before { font-size: 12px; }
+    .cell.miss::after { font-size: 14px; }
+    .boards-wrapper { gap: 4px; }
+    .board-title { font-size: 8px; }
+    .scores { font-size: 10px; }
 }
 
 @media (max-height: 700px) {
     .game-container { padding: 6px; }
-    .scores { font-size: 11px; padding: 3px 6px; }
-    .status { font-size: 12px; padding: 6px; min-height: 30px; }
-    .game-header span { font-size: 13px; }
-    .board-title { font-size: 9px; }
+    .scores { padding: 2px 6px; font-size: 10px; }
+    .status { font-size: 11px; padding: 4px 8px; min-height: 26px; }
+    .game-header span { font-size: 12px; }
+    .back-btn { font-size: 20px; }
+    .board-title { font-size: 8px; margin-bottom: 2px; }
 }
