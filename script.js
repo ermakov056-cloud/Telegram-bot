@@ -251,7 +251,7 @@ function render() {
     
     for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
-            // Своё поле (корабли видны)
+            // Своё поле
             let cell1 = document.createElement('div');
             cell1.className = 'cell';
             let val = playerBoard[r][c];
@@ -264,12 +264,10 @@ function render() {
             } else if (val === 3) {
                 cell1.classList.add('miss');
                 cell1.textContent = '·';
-            } else {
-                cell1.textContent = ' ';
             }
             p1Board.appendChild(cell1);
             
-            // Поле врага (корабли скрыты)
+            // Поле врага
             let cell2 = document.createElement('div');
             cell2.className = 'cell';
             let v = enemyVisible[r][c];
@@ -283,15 +281,9 @@ function render() {
                 cell2.classList.add('fog');
                 cell2.textContent = ' ';
             }
-            
-            // ВАЖНО: используем onclick вместо addEventListener для iPhone
-            cell2.onclick = (function(row, col) {
-                return function() {
-                    makeShot(row, col);
-                };
-            })(r, c);
-            
-            cell2.style.cursor = 'pointer';
+            // Привязываем данные
+            cell2.setAttribute('data-row', r);
+            cell2.setAttribute('data-col', c);
             p2Board.appendChild(cell2);
         }
     }
@@ -300,6 +292,20 @@ function render() {
     document.getElementById('p2Ships').textContent = enemyShips;
     document.getElementById('moveCounter').textContent = moves;
 }
+
+// === ДЕЛЕГИРОВАНИЕ СОБЫТИЙ (работает на 100% в Telegram) ===
+document.addEventListener('DOMContentLoaded', function() {
+    // Клики по полю врага
+    document.getElementById('enemyBoard').addEventListener('click', function(e) {
+        let cell = e.target.closest('.cell');
+        if (!cell) return;
+        let row = parseInt(cell.getAttribute('data-row'));
+        let col = parseInt(cell.getAttribute('data-col'));
+        if (!isNaN(row) && !isNaN(col)) {
+            makeShot(row, col);
+        }
+    });
+});
 
 // === ВЫСТРЕЛ ===
 function makeShot(row, col) {
@@ -431,33 +437,36 @@ function renderShipyard() {
                 <div class="ship-name">${ship.name}</div>
                 <div class="ship-level">Уровень ${ship.level} ${ship.owned ? '✅' : '🔒'} | ⚔️${ship.damage} ❤️${ship.hp}</div>
             </div>
-            <button class="upgrade-btn" ${!canUpgrade && !canBuy ? 'disabled' : ''}>
+            <button class="upgrade-btn" onclick="upgradeShip(${ship.id})" ${!canUpgrade && !canBuy ? 'disabled' : ''}>
                 ${ship.owned ? `⬆ ${cost}⭐` : `Купить ${ship.price}⭐`}
             </button>
         `;
-        
-        item.querySelector('.upgrade-btn').onclick = function() {
-            if (!ship.owned) {
-                if (profile.rating < ship.price) return alert('Недостаточно рейтинга!');
-                profile.rating -= ship.price;
-                ship.owned = true;
-                ship.level = 1;
-            } else {
-                const c = ship.level * 50 + ship.price;
-                if (profile.rating < c) return alert('Недостаточно рейтинга!');
-                profile.rating -= c;
-                ship.level++;
-                ship.damage = Math.floor(ship.damage * 1.2);
-                ship.hp = Math.floor(ship.hp * 1.15);
-            }
-            saveProfile();
-            renderShipyard();
-            updateUI();
-        };
-        
         container.appendChild(item);
     });
 }
+
+// Выносим функцию в глобальный доступ для onclick
+window.upgradeShip = function(id) {
+    const ship = shipyard.ships.find(s => s.id === id);
+    if (!ship) return;
+    
+    if (!ship.owned) {
+        if (profile.rating < ship.price) return alert('Недостаточно рейтинга!');
+        profile.rating -= ship.price;
+        ship.owned = true;
+        ship.level = 1;
+    } else {
+        const c = ship.level * 50 + ship.price;
+        if (profile.rating < c) return alert('Недостаточно рейтинга!');
+        profile.rating -= c;
+        ship.level++;
+        ship.damage = Math.floor(ship.damage * 1.2);
+        ship.hp = Math.floor(ship.hp * 1.15);
+    }
+    saveProfile();
+    renderShipyard();
+    updateUI();
+};
 
 // === МИССИИ ===
 function renderMissions() {
@@ -501,14 +510,12 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
     updateUI();
     
-    // Меню
-    document.getElementById('btnVsAI').onclick = () => startGame('ai');
-    document.getElementById('btnVsPlayer').onclick = () => startGame('pvp');
-    document.getElementById('btnShipyard').onclick = () => showScreen('shipyard');
-    document.getElementById('btnMissions').onclick = () => showScreen('missions');
-    document.getElementById('btnSettings').onclick = () => showScreen('settings');
-    
-    // Игра
+    // Все кнопки через onclick в HTML или через присвоение
+    document.getElementById('btnVsAI').onclick = function() { startGame('ai'); };
+    document.getElementById('btnVsPlayer').onclick = function() { startGame('pvp'); };
+    document.getElementById('btnShipyard').onclick = function() { showScreen('shipyard'); };
+    document.getElementById('btnMissions').onclick = function() { showScreen('missions'); };
+    document.getElementById('btnSettings').onclick = function() { showScreen('settings'); };
     document.getElementById('backToMenu').onclick = backToMenu;
     document.getElementById('btnReset').onclick = resetGame;
     document.getElementById('btnSound').onclick = function() {
@@ -517,23 +524,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (soundEnabled) playSound('hit');
     };
     document.getElementById('avatarEdit').onclick = changeAvatar;
-    
-    // Настройки
     document.getElementById('closeSettings').onclick = function() {
         saveSettings();
         showScreen('menu');
     };
-    document.getElementById('closeShipyard').onclick = () => showScreen('menu');
-    document.getElementById('closeMissions').onclick = () => showScreen('menu');
+    document.getElementById('closeShipyard').onclick = function() { showScreen('menu'); };
+    document.getElementById('closeMissions').onclick = function() { showScreen('menu'); };
+    document.getElementById('closeResult').onclick = closeResult;
+    document.getElementById('backToMenuFromResult').onclick = backToMenu;
+    
     document.getElementById('sizeSelect').onchange = saveSettings;
     document.getElementById('difficultySelect').onchange = saveSettings;
     document.getElementById('soundToggle').onchange = saveSettings;
     
-    // Результат
-    document.getElementById('closeResult').onclick = closeResult;
-    document.getElementById('backToMenuFromResult').onclick = backToMenu;
-    
-    // Telegram
     if (tg) {
         tg.onEvent('backButtonClicked', function() {
             const active = document.querySelector('.screen.active');
@@ -548,7 +551,6 @@ document.addEventListener('DOMContentLoaded', function() {
         tg.BackButton.show();
     }
     
-    // Ресайз
     window.addEventListener('resize', function() {
         if (document.getElementById('game').classList.contains('active')) render();
     });
