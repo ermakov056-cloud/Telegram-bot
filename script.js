@@ -261,15 +261,13 @@ function render() {
     const cellSize = Math.max(16, Math.floor((containerSize - (SIZE - 1) * 2) / SIZE));
     const gridSize = cellSize * SIZE + (SIZE - 1) * 2;
     
-    const gridTemplate = `repeat(${SIZE}, ${cellSize}px)`;
-    
-    p1Board.style.gridTemplateColumns = gridTemplate;
-    p1Board.style.gridTemplateRows = gridTemplate;
+    p1Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
+    p1Board.style.gridTemplateRows = `repeat(${SIZE}, ${cellSize}px)`;
     p1Board.style.width = gridSize + 'px';
     p1Board.style.height = gridSize + 'px';
     
-    p2Board.style.gridTemplateColumns = gridTemplate;
-    p2Board.style.gridTemplateRows = gridTemplate;
+    p2Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
+    p2Board.style.gridTemplateRows = `repeat(${SIZE}, ${cellSize}px)`;
     p2Board.style.width = gridSize + 'px';
     p2Board.style.height = gridSize + 'px';
     
@@ -514,19 +512,16 @@ function changeAvatar() {
     saveProfile();
 }
 
-// === ДЕЛЕГИРОВАНИЕ СОБЫТИЙ (ОДИН РАЗ) ===
+// === ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ===
 document.addEventListener('DOMContentLoaded', function() {
     // Клик по полю врага
     document.getElementById('enemyBoard').addEventListener('click', function(e) {
         const cell = e.target.closest('.cell');
         if (!cell) return;
-        
         const row = parseInt(cell.dataset.row);
         const col = parseInt(cell.dataset.col);
-        
         if (isNaN(row) || isNaN(col)) return;
         if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
-        
         makeShot(row, col);
     });
     
@@ -534,24 +529,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('playerBoard').addEventListener('click', function(e) {
         if (gameMode !== 'pvp') return;
         if (gameOver) return;
-        if (isPlayerTurn) return; // Игрок 2 ходит когда isPlayerTurn = false
-        
+        if (isPlayerTurn) return;
         const cell = e.target.closest('.cell');
         if (!cell) return;
-        
         const row = parseInt(cell.dataset.row);
         const col = parseInt(cell.dataset.col);
-        
         if (isNaN(row) || isNaN(col)) return;
         if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
-        
-        // Проверка что клетка не обстреляна
         if (playerBoard[row][col] === 2 || playerBoard[row][col] === 3) {
             document.getElementById('status').textContent = '⚠️ Сюда уже стреляли!';
             return;
         }
         
-        // Ход игрока 2
         moves++;
         if (playerBoard[row][col] === 1) {
             playerBoard[row][col] = 2;
