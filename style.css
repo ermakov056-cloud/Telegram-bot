@@ -630,3 +630,247 @@ body {
     .turn-indicator { font-size: 16px; }
     .vs-divider { font-size: 14px; }
 }
+/* ... все предыдущие стили остаются ... */
+
+/* === ПРОФИЛЬ === */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    margin-bottom: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.avatar-container {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+}
+
+.avatar-container img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid #4af;
+    object-fit: cover;
+}
+
+.avatar-edit {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #2a6aaa;
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid #0a0e27;
+    transition: all 0.2s;
+}
+
+.avatar-edit:active {
+    transform: scale(0.85);
+}
+
+.profile-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.player-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.player-rank {
+    font-size: 13px;
+    color: #ffcc44;
+    font-weight: 600;
+}
+
+.player-rating {
+    font-size: 12px;
+    color: #88ddff;
+}
+
+/* === ВЕРФЬ === */
+.shipyard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.shipyard-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.shipyard-item .ship-icon {
+    font-size: 28px;
+}
+
+.shipyard-item .ship-info {
+    flex: 1;
+}
+
+.shipyard-item .ship-name {
+    font-weight: 600;
+    color: #fff;
+    font-size: 14px;
+}
+
+.shipyard-item .ship-level {
+    font-size: 12px;
+    color: #88ddff;
+}
+
+.shipyard-item .ship-stats {
+    font-size: 11px;
+    color: #88ddff;
+}
+
+.shipyard-item .upgrade-btn {
+    background: #2a6aaa;
+    border: none;
+    color: white;
+    padding: 4px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.shipyard-item .upgrade-btn:active {
+    transform: scale(0.93);
+}
+
+.shipyard-item .upgrade-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* === МИССИИ === */
+.missions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.mission-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mission-item .mission-icon {
+    font-size: 24px;
+}
+
+.mission-item .mission-info {
+    flex: 1;
+}
+
+.mission-item .mission-title {
+    font-weight: 600;
+    color: #fff;
+    font-size: 13px;
+}
+
+.mission-item .mission-desc {
+    font-size: 11px;
+    color: #88ddff;
+}
+
+.mission-item .mission-progress {
+    font-size: 11px;
+    color: #ffcc44;
+}
+
+.mission-item .mission-reward {
+    font-size: 11px;
+    color: #4af;
+}
+
+/* === КЛАНЫ === */
+.clans-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.clan-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.clan-item .clan-icon {
+    font-size: 28px;
+}
+
+.clan-item .clan-info {
+    flex: 1;
+}
+
+.clan-item .clan-name {
+    font-weight: 600;
+    color: #fff;
+    font-size: 14px;
+}
+
+.clan-item .clan-members {
+    font-size: 11px;
+    color: #88ddff;
+}
+
+.clan-item .clan-level {
+    font-size: 11px;
+    color: #ffcc44;
+}
+
+.clan-item .join-btn {
+    background: #2a6aaa;
+    border: none;
+    color: white;
+    padding: 4px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clan-item .join-btn:active {
+    transform: scale(0.93);
+}
