@@ -1,12 +1,10 @@
 // === Telegram ===
 let tg = window.Telegram?.WebApp;
 let soundEnabled = true;
-let fogEnabled = true;
 
 // === Игровые переменные ===
-let SIZE = 8;
+let SIZE = 12;
 let difficulty = 'medium';
-let showShips = false;
 let gameMode = 'ai';
 let playerBoard, enemyBoard, enemyVisible;
 let playerShips, enemyShips;
@@ -16,7 +14,10 @@ let moves = 0;
 let stats = { wins: 0, losses: 0, shots: 0, hits: 0 };
 let currentGameShots = 0;
 let currentGameHits = 0;
-const shipSizes = [3, 2, 2, 1, 1, 1];
+
+// === НОВЫЕ КОРАБЛИ (больше и разнообразнее) ===
+const shipSizes = [6, 5, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+// Всего: 6+5+4+3+3+2+2+2+1+1+1+1 = 31 клетка
 
 // === Звуки ===
 let audioCtx = null;
@@ -52,21 +53,21 @@ function playSound(type) {
                 osc.stop(audioCtx.currentTime + 0.12);
                 break;
             case 'win':
-                [523, 659, 784].forEach((freq, i) => {
+                [523, 659, 784, 1047].forEach((freq, i) => {
                     const o = audioCtx.createOscillator();
                     const g = audioCtx.createGain();
                     o.connect(g);
                     g.connect(audioCtx.destination);
-                    o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15);
-                    g.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.15);
-                    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.2);
-                    o.start(audioCtx.currentTime + i * 0.15);
-                    o.stop(audioCtx.currentTime + i * 0.15 + 0.2);
+                    o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.12);
+                    g.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.12);
+                    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.12 + 0.2);
+                    o.start(audioCtx.currentTime + i * 0.12);
+                    o.stop(audioCtx.currentTime + i * 0.12 + 0.2);
                 });
                 break;
             case 'lose':
                 osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.4);
+                osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.5);
                 gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
                 osc.start(audioCtx.currentTime);
@@ -81,15 +82,11 @@ function loadSettings() {
     const saved = localStorage.getItem('seaBattleSettings');
     if (saved) {
         const s = JSON.parse(saved);
-        SIZE = s.size || 8;
+        SIZE = s.size || 12;
         difficulty = s.difficulty || 'medium';
-        showShips = s.showShips || false;
-        fogEnabled = s.fogEnabled !== undefined ? s.fogEnabled : true;
         soundEnabled = s.soundEnabled !== undefined ? s.soundEnabled : true;
         document.getElementById('sizeSelect').value = SIZE;
         document.getElementById('difficultySelect').value = difficulty;
-        document.getElementById('showShips').checked = showShips;
-        document.getElementById('fogToggle').checked = fogEnabled;
         document.getElementById('soundToggle').checked = soundEnabled;
     }
     const statsSaved = localStorage.getItem('seaBattleStats');
@@ -103,15 +100,11 @@ function saveSettings() {
     const settings = {
         size: parseInt(document.getElementById('sizeSelect').value),
         difficulty: document.getElementById('difficultySelect').value,
-        showShips: document.getElementById('showShips').checked,
-        fogEnabled: document.getElementById('fogToggle').checked,
         soundEnabled: document.getElementById('soundToggle').checked
     };
     localStorage.setItem('seaBattleSettings', JSON.stringify(settings));
     SIZE = settings.size;
     difficulty = settings.difficulty;
-    showShips = settings.showShips;
-    fogEnabled = settings.fogEnabled;
     soundEnabled = settings.soundEnabled;
 }
 
@@ -144,14 +137,14 @@ function placeShips(board) {
     for (let size of ships) {
         let placed = false;
         let attempts = 0;
-        while (!placed && attempts < 1000) {
+        while (!placed && attempts < 2000) {
             attempts++;
             let row = Math.floor(Math.random() * SIZE);
             let col = Math.floor(Math.random() * SIZE);
             let horizontal = Math.random() > 0.5;
             if (canPlace(board, row, col, size, horizontal)) {
                 for (let i = 0; i < size; i++) {
-                    board[row + (horizontal ? 0 : i)][col + (horizontal ? i : 0)] = 1;
+                    board[row + (horizontal ? 0 : i)][col + (horizontal ? i : 0)] = size;
                 }
                 placed = true;
             }
@@ -178,7 +171,7 @@ function startGame(mode) {
         document.getElementById('enemyBoardTitle').textContent = '👥 Игрок 2';
         document.getElementById('gameTitle').textContent = '👥 2 игрока';
     } else {
-        document.getElementById('enemyBoardTitle').textContent = '🌊 Поле боя';
+        document.getElementById('enemyBoardTitle').textContent = '🌊 Акватория';
         document.getElementById('gameTitle').textContent = '🤖 Против ИИ';
     }
     resetGame();
@@ -210,13 +203,13 @@ function resetGame() {
     render();
     updateStatsDisplay();
 }
+
 function render() {
     const p1Board = document.getElementById('playerBoard');
     const p2Board = document.getElementById('enemyBoard');
     
-    // Расчёт размера клеток
-    const containerWidth = Math.min(window.innerWidth * 0.42, 180);
-    const cellSize = Math.max(20, Math.floor((containerWidth - (SIZE - 1) * 2) / SIZE));
+    const containerWidth = Math.min(window.innerWidth * 0.42, 190);
+    const cellSize = Math.max(18, Math.floor((containerWidth - (SIZE - 1) * 2) / SIZE));
     const gridSize = cellSize * SIZE + (SIZE - 1) * 2;
     
     p1Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
@@ -231,32 +224,32 @@ function render() {
     
     for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
-            // === ПОЛЕ ИГРОКА (свои корабли видны) ===
+            // === ИГРОК (свои корабли) ===
             let cell1 = document.createElement('div');
             cell1.className = 'cell';
             let val = playerBoard[r][c];
-            if (val === 1) cell1.classList.add('ship');
-            else if (val === 2) { cell1.classList.add('hit'); cell1.textContent = '✕'; }
-            else if (val === 3) cell1.classList.add('miss');
+            if (val > 0 && val < 99) {
+                cell1.classList.add('ship');
+                cell1.dataset.size = val;
+            } else if (val === 99) { 
+                cell1.classList.add('hit'); 
+                cell1.textContent = '✕';
+            } else if (val === 100) {
+                cell1.classList.add('miss');
+            }
             p1Board.appendChild(cell1);
             
-            // === ПОЛЕ ВРАГА (корабли НЕ видны НИКОГДА) ===
+            // === ВРАГ (скрыто) ===
             let cell2 = document.createElement('div');
             cell2.className = 'cell';
             let v = enemyVisible[r][c];
             
-            if (v === 2) { 
-                // Попадание — показываем красный крест
-                cell2.classList.add('hit'); 
-                cell2.textContent = '✕';
-            } else if (v === 3) {
-                // Промах — серая точка
+            if (v === 99) {
+                cell2.classList.add('hit');
+            } else if (v === 100) {
                 cell2.classList.add('miss');
             } else {
-                // Необстрелянная клетка — ВСЕГДА скрыта (туман)
                 cell2.classList.add('fog');
-                // Если хочешь показывать "?" — раскомментируй следующую строку:
-                // cell2.textContent = '?';
             }
             
             cell2.dataset.row = r;
@@ -283,12 +276,12 @@ function makeShot(row, col) {
     currentGameShots++;
     stats.shots++;
     
-    if (enemyBoard[row][col] === 1) {
-        enemyBoard[row][col] = 2;
-        enemyVisible[row][col] = 2;
+    if (enemyBoard[row][col] > 0) {
+        enemyVisible[row][col] = 99;
         currentGameHits++;
         stats.hits++;
-        enemyShips--;
+        enemyShips -= enemyBoard[row][col];
+        enemyBoard[row][col] = 99;
         playSound('hit');
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
         document.getElementById('status').textContent = '🔥 ПОПАДАНИЕ! Ещё ход!';
@@ -306,7 +299,8 @@ function makeShot(row, col) {
         updateStatsDisplay();
         return;
     } else {
-        enemyVisible[row][col] = 3;
+        enemyVisible[row][col] = 100;
+        enemyBoard[row][col] = 100;
         playSound('miss');
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         document.getElementById('status').textContent = '❌ Промах!';
@@ -330,14 +324,14 @@ function pvpTurn2() {
     
     const tempClick = (r, c) => {
         if (gameOver) return;
-        if (playerBoard[r][c] !== 0) {
+        if (playerBoard[r][c] === 99 || playerBoard[r][c] === 100) {
             document.getElementById('status').textContent = 'Сюда уже стреляли!';
             return;
         }
         moves++;
-        if (playerBoard[r][c] === 1) {
-            playerBoard[r][c] = 2;
-            playerShips--;
+        if (playerBoard[r][c] > 0) {
+            playerShips -= playerBoard[r][c];
+            playerBoard[r][c] = 99;
             playSound('hit');
             if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
             if (playerShips === 0) {
@@ -353,7 +347,7 @@ function pvpTurn2() {
             render();
             updateStatsDisplay();
         } else {
-            playerBoard[r][c] = 3;
+            playerBoard[r][c] = 100;
             playSound('miss');
             document.getElementById('status').textContent = '❌ Промах! Ход игрока 1';
             document.getElementById('turnIndicator').textContent = '🎯';
@@ -383,7 +377,7 @@ function computerTurn() {
             row = Math.floor(Math.random() * SIZE);
             col = Math.floor(Math.random() * SIZE);
             attempts++;
-        } while ((playerBoard[row][col] !== 0 && playerBoard[row][col] !== 1) && attempts < 200);
+        } while ((playerBoard[row][col] !== 0) && attempts < 300);
     } else if (difficulty === 'hard' || difficulty === 'nightmare') {
         for (let i = 0; i < SIZE; i++) {
             for (let j = 0; j < SIZE; j++) {
@@ -402,7 +396,7 @@ function computerTurn() {
         let found = false;
         for (let i = 0; i < SIZE; i++) {
             for (let j = 0; j < SIZE; j++) {
-                if (playerBoard[i][j] === 2) {
+                if (playerBoard[i][j] === 99) {
                     for (let [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
                         let nr = i+dx, nc = j+dy;
                         if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && playerBoard[nr][nc] === 0) {
@@ -421,13 +415,13 @@ function computerTurn() {
                 row = Math.floor(Math.random() * SIZE);
                 col = Math.floor(Math.random() * SIZE);
                 attempts++;
-            } while (playerBoard[row][col] !== 0 && attempts < 200);
+            } while (playerBoard[row][col] !== 0 && attempts < 300);
         }
     }
     
-    if (playerBoard[row][col] === 1) {
-        playerBoard[row][col] = 2;
-        playerShips--;
+    if (playerBoard[row][col] > 0) {
+        playerShips -= playerBoard[row][col];
+        playerBoard[row][col] = 99;
         playSound('hit');
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
         document.getElementById('status').textContent = `💥 Враг попал в ${String.fromCharCode(65+col)}${row+1}!`;
@@ -443,7 +437,7 @@ function computerTurn() {
         render();
         setTimeout(() => computerTurn(), 400);
     } else {
-        playerBoard[row][col] = 3;
+        playerBoard[row][col] = 100;
         playSound('miss');
         document.getElementById('status').textContent = `Враг промахнулся по ${String.fromCharCode(65+col)}${row+1}`;
         document.getElementById('turnIndicator').textContent = '🎯';
@@ -492,12 +486,6 @@ function shareScore() {
     }
 }
 
-function toggleFog() {
-    fogEnabled = !fogEnabled;
-    document.getElementById('fogToggle').checked = fogEnabled;
-    render();
-}
-
 function toggleSound() {
     soundEnabled = !soundEnabled;
     document.getElementById('soundToggle').checked = soundEnabled;
@@ -512,44 +500,35 @@ function updateStatsDisplay() {
     localStorage.setItem('seaBattleStats', JSON.stringify(stats));
 }
 
-// === Инициализация и обработчики событий ===
+// === Инициализация ===
 document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
     updateStatsDisplay();
     
-    // Меню
     document.getElementById('btnVsAI').addEventListener('click', () => startGame('ai'));
     document.getElementById('btnVsPlayer').addEventListener('click', () => startGame('pvp'));
     document.getElementById('btnSettings').addEventListener('click', () => showScreen('settings'));
     document.getElementById('btnTutorial').addEventListener('click', () => showScreen('tutorial'));
     document.getElementById('btnShare').addEventListener('click', shareScore);
     
-    // Игра
     document.getElementById('backToMenu').addEventListener('click', backToMenu);
     document.getElementById('btnReset').addEventListener('click', resetGame);
-    document.getElementById('btnFog').addEventListener('click', toggleFog);
     document.getElementById('btnSound').addEventListener('click', toggleSound);
     
-    // Настройки
     document.getElementById('closeSettings').addEventListener('click', function() {
         saveSettings();
         showScreen('menu');
     });
     document.getElementById('sizeSelect').addEventListener('change', saveSettings);
     document.getElementById('difficultySelect').addEventListener('change', saveSettings);
-    document.getElementById('fogToggle').addEventListener('change', saveSettings);
     document.getElementById('soundToggle').addEventListener('change', saveSettings);
-    document.getElementById('showShips').addEventListener('change', saveSettings);
     
-    // Обучение
     document.getElementById('closeTutorial').addEventListener('click', () => showScreen('menu'));
     
-    // Результат
     document.getElementById('closeResult').addEventListener('click', closeResult);
     document.getElementById('shareResult').addEventListener('click', shareResult);
     document.getElementById('backToMenuFromResult').addEventListener('click', backToMenu);
     
-    // Telegram Back Button
     if (tg) {
         tg.onEvent('backButtonClicked', function() {
             if (document.getElementById('game').classList.contains('active')) {
@@ -568,7 +547,6 @@ document.addEventListener('DOMContentLoaded', function() {
         tg.BackButton.show();
     }
     
-    // Ресайз для адаптации
     window.addEventListener('resize', () => {
         if (document.getElementById('game').classList.contains('active')) {
             render();
@@ -576,16 +554,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Адаптация под тему Телеграма
+// === Тема Telegram ===
 if (tg) {
     const theme = tg.themeParams;
     if (theme) {
-        document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color || '#0a0a2a');
+        document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color || '#0a0e27');
         document.documentElement.style.setProperty('--tg-theme-text-color', theme.text_color || '#ffffff');
         document.documentElement.style.setProperty('--tg-theme-hint-color', theme.hint_color || '#88ddff');
         document.documentElement.style.setProperty('--tg-theme-button-color', theme.button_color || '#2a6aaa');
         document.documentElement.style.setProperty('--tg-theme-button-text-color', theme.button_text_color || '#ffffff');
         document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', theme.secondary_bg_color || '#1a1a4a');
-        document.body.style.background = theme.bg_color || '#0a0a2a';
+        document.body.style.background = theme.bg_color || '#0a0e27';
     }
 }
