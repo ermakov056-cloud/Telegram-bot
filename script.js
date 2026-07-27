@@ -15,9 +15,8 @@ let stats = { wins: 0, losses: 0, shots: 0, hits: 0 };
 let currentGameShots = 0;
 let currentGameHits = 0;
 
-// === НОВЫЕ КОРАБЛИ (больше и разнообразнее) ===
+// === КОРАБЛИ ===
 const shipSizes = [6, 5, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
-// Всего: 6+5+4+3+3+2+2+2+1+1+1+1 = 31 клетка
 
 // === Звуки ===
 let audioCtx = null;
@@ -144,7 +143,7 @@ function placeShips(board) {
             let horizontal = Math.random() > 0.5;
             if (canPlace(board, row, col, size, horizontal)) {
                 for (let i = 0; i < size; i++) {
-                    board[row + (horizontal ? 0 : i)][col + (horizontal ? i : 0)] = size;
+                    board[row + (horizontal ? 0 : i)][col + (horizontal ? i : 0)] = 1; // ВСЕГДА 1
                 }
                 placed = true;
             }
@@ -224,29 +223,30 @@ function render() {
     
     for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
-            // === ИГРОК (свои корабли) ===
+            // === ИГРОК (свои корабли видны) ===
             let cell1 = document.createElement('div');
             cell1.className = 'cell';
             let val = playerBoard[r][c];
-            if (val > 0 && val < 99) {
+            
+            if (val === 1) {
                 cell1.classList.add('ship');
-                cell1.dataset.size = val;
-            } else if (val === 99) { 
-                cell1.classList.add('hit'); 
+            } else if (val === 2) {
+                cell1.classList.add('hit');
                 cell1.textContent = '✕';
-            } else if (val === 100) {
+            } else if (val === 3) {
                 cell1.classList.add('miss');
             }
             p1Board.appendChild(cell1);
             
-            // === ВРАГ (скрыто) ===
+            // === ВРАГ (корабли скрыты) ===
             let cell2 = document.createElement('div');
             cell2.className = 'cell';
             let v = enemyVisible[r][c];
             
-            if (v === 99) {
+            if (v === 2) {
                 cell2.classList.add('hit');
-            } else if (v === 100) {
+                cell2.textContent = '✕';
+            } else if (v === 3) {
                 cell2.classList.add('miss');
             } else {
                 cell2.classList.add('fog');
@@ -254,7 +254,9 @@ function render() {
             
             cell2.dataset.row = r;
             cell2.dataset.col = c;
-            cell2.addEventListener('click', () => makeShot(r, c));
+            cell2.addEventListener('click', function() {
+                makeShot(parseInt(this.dataset.row), parseInt(this.dataset.col));
+            });
             p2Board.appendChild(cell2);
         }
     }
@@ -265,7 +267,16 @@ function render() {
 }
 
 function makeShot(row, col) {
-    if (gameOver || !isPlayerTurn) return;
+    console.log('Выстрел по:', row, col);
+    
+    if (gameOver) {
+        console.log('Игра окончена');
+        return;
+    }
+    if (!isPlayerTurn) {
+        console.log('Не ваш ход');
+        return;
+    }
     if (enemyVisible[row][col] !== 0) {
         document.getElementById('status').textContent = 'Сюда уже стреляли!';
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
@@ -276,12 +287,13 @@ function makeShot(row, col) {
     currentGameShots++;
     stats.shots++;
     
-    if (enemyBoard[row][col] > 0) {
-        enemyVisible[row][col] = 99;
+    // Попадание
+    if (enemyBoard[row][col] === 1) {
+        enemyBoard[row][col] = 2;
+        enemyVisible[row][col] = 2;
         currentGameHits++;
         stats.hits++;
-        enemyShips -= enemyBoard[row][col];
-        enemyBoard[row][col] = 99;
+        enemyShips--;
         playSound('hit');
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
         document.getElementById('status').textContent = '🔥 ПОПАДАНИЕ! Ещё ход!';
@@ -298,9 +310,11 @@ function makeShot(row, col) {
         render();
         updateStatsDisplay();
         return;
-    } else {
-        enemyVisible[row][col] = 100;
-        enemyBoard[row][col] = 100;
+    } 
+    // Промах
+    else {
+        enemyBoard[row][col] = 3;
+        enemyVisible[row][col] = 3;
         playSound('miss');
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         document.getElementById('status').textContent = '❌ Промах!';
@@ -324,14 +338,14 @@ function pvpTurn2() {
     
     const tempClick = (r, c) => {
         if (gameOver) return;
-        if (playerBoard[r][c] === 99 || playerBoard[r][c] === 100) {
+        if (playerBoard[r][c] === 2 || playerBoard[r][c] === 3) {
             document.getElementById('status').textContent = 'Сюда уже стреляли!';
             return;
         }
         moves++;
-        if (playerBoard[r][c] > 0) {
-            playerShips -= playerBoard[r][c];
-            playerBoard[r][c] = 99;
+        if (playerBoard[r][c] === 1) {
+            playerBoard[r][c] = 2;
+            playerShips--;
             playSound('hit');
             if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
             if (playerShips === 0) {
@@ -347,7 +361,7 @@ function pvpTurn2() {
             render();
             updateStatsDisplay();
         } else {
-            playerBoard[r][c] = 100;
+            playerBoard[r][c] = 3;
             playSound('miss');
             document.getElementById('status').textContent = '❌ Промах! Ход игрока 1';
             document.getElementById('turnIndicator').textContent = '🎯';
@@ -361,7 +375,9 @@ function pvpTurn2() {
     cells.forEach((cell, index) => {
         const r = Math.floor(index / SIZE);
         const c = index % SIZE;
-        cell.onclick = () => tempClick(r, c);
+        cell.onclick = function() {
+            tempClick(r, c);
+        };
         cell.style.cursor = 'pointer';
     });
 }
@@ -371,6 +387,7 @@ function computerTurn() {
     document.getElementById('turnIndicator').textContent = '🤖';
     
     let row, col;
+    
     if (difficulty === 'easy') {
         let attempts = 0;
         do {
@@ -379,28 +396,33 @@ function computerTurn() {
             attempts++;
         } while ((playerBoard[row][col] !== 0) && attempts < 300);
     } else if (difficulty === 'hard' || difficulty === 'nightmare') {
+        // Алгоритм охоты
+        let found = false;
         for (let i = 0; i < SIZE; i++) {
             for (let j = 0; j < SIZE; j++) {
                 if ((i + j) % 2 === 0 && playerBoard[i][j] === 0) {
                     row = i; col = j;
+                    found = true;
                     break;
                 }
             }
-            if (row !== undefined) break;
+            if (found) break;
         }
-        if (row === undefined) {
+        if (!found) {
             row = Math.floor(Math.random() * SIZE);
             col = Math.floor(Math.random() * SIZE);
         }
     } else {
+        // Средний - добивает подбитые
         let found = false;
         for (let i = 0; i < SIZE; i++) {
             for (let j = 0; j < SIZE; j++) {
-                if (playerBoard[i][j] === 99) {
+                if (playerBoard[i][j] === 2) {
                     for (let [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
                         let nr = i+dx, nc = j+dy;
                         if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && playerBoard[nr][nc] === 0) {
-                            row = nr; col = nc; found = true;
+                            row = nr; col = nc;
+                            found = true;
                             break;
                         }
                     }
@@ -419,9 +441,10 @@ function computerTurn() {
         }
     }
     
-    if (playerBoard[row][col] > 0) {
-        playerShips -= playerBoard[row][col];
-        playerBoard[row][col] = 99;
+    // Выстрел компьютера
+    if (playerBoard[row][col] === 1) {
+        playerBoard[row][col] = 2;
+        playerShips--;
         playSound('hit');
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
         document.getElementById('status').textContent = `💥 Враг попал в ${String.fromCharCode(65+col)}${row+1}!`;
@@ -437,7 +460,7 @@ function computerTurn() {
         render();
         setTimeout(() => computerTurn(), 400);
     } else {
-        playerBoard[row][col] = 100;
+        playerBoard[row][col] = 3;
         playSound('miss');
         document.getElementById('status').textContent = `Враг промахнулся по ${String.fromCharCode(65+col)}${row+1}`;
         document.getElementById('turnIndicator').textContent = '🎯';
