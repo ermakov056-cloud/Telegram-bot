@@ -141,6 +141,7 @@ body {
     margin: 0 auto;
     position: relative;
     z-index: 1;
+    overflow: hidden;
 }
 
 .screen { display: none; animation: fadeIn 0.3s ease; }
@@ -251,7 +252,12 @@ body {
 }
 
 /* === ИГРА === */
-.game-container { padding: 10px; border-radius: 16px; }
+.game-container {
+    padding: 8px;
+    border-radius: 16px;
+    max-width: 100%;
+    overflow: hidden;
+}
 
 .game-header {
     display: flex;
@@ -288,20 +294,27 @@ body {
 
 .scores span { color: #ffcc44; font-weight: bold; }
 
+/* === ПОЛЯ === */
 .boards-wrapper {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .board-container {
     background: rgba(0, 20, 50, 0.5);
-    padding: 4px;
-    border-radius: 10px;
-    flex: 1;
-    min-width: 0;
+    padding: 3px;
+    border-radius: 8px;
+    flex: 0 0 auto;
+    width: 48%;
     max-width: 48%;
+    min-width: 0;
     border: 1px solid rgba(255, 255, 255, 0.04);
+    overflow: hidden;
 }
 
 .board-title {
@@ -311,13 +324,19 @@ body {
     margin-bottom: 3px;
     font-weight: 500;
     text-shadow: 0 0 10px rgba(68, 170, 255, 0.2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .board {
     display: grid;
     gap: 2px;
     aspect-ratio: 1;
-    width: 100%;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100%;
+    max-height: 100%;
     overflow: hidden;
 }
 
@@ -345,14 +364,13 @@ body {
 
 .cell:active { transform: scale(0.85); }
 
-/* === КОРАБЛИ (чёткие и узнаваемые) === */
+/* === КОРАБЛИ === */
 .cell.ship {
     background: transparent;
     border: none;
     position: relative;
 }
 
-/* Корпус корабля — простая форма */
 .cell.ship::before {
     content: '';
     position: absolute;
@@ -368,7 +386,6 @@ body {
         0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Палуба — светлая полоса */
 .cell.ship::after {
     content: '';
     position: absolute;
@@ -381,7 +398,7 @@ body {
     box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.15);
 }
 
-/* === 4-палубный (линкор) — самый большой === */
+/* 4-палубный */
 .cell.ship[data-size="4"]::before {
     background: linear-gradient(180deg, #4a6a5a 0%, #2a5a3a 50%, #1a3a2a 100%);
     border: 1px solid #3a5a4a;
@@ -391,7 +408,6 @@ body {
     top: 18%;
     bottom: 35%;
 }
-/* Труба */
 .cell.ship[data-size="4"] .ship-detail {
     display: block;
     position: absolute;
@@ -403,7 +419,6 @@ body {
     border-radius: 2px 2px 0 0;
     box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
 }
-/* Флаг */
 .cell.ship[data-size="4"] .ship-flag {
     display: block;
     position: absolute;
@@ -415,7 +430,6 @@ body {
     clip-path: polygon(0 0, 100% 50%, 0 100%);
     animation: flagWave 2s ease-in-out infinite;
 }
-/* Нос корабля (заострение) */
 .cell.ship[data-size="4"] .ship-bow {
     display: block;
     position: absolute;
@@ -427,7 +441,7 @@ body {
     clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 
-/* === 3-палубный (крейсер) === */
+/* 3-палубный */
 .cell.ship[data-size="3"]::before {
     background: linear-gradient(180deg, #4a7a6a 0%, #2a5a4a 50%, #1a3a2a 100%);
     border: 1px solid #3a6a5a;
@@ -448,7 +462,7 @@ body {
     border-radius: 2px 2px 0 0;
 }
 
-/* === 2-палубный (эсминец) === */
+/* 2-палубный */
 .cell.ship[data-size="2"]::before {
     background: linear-gradient(180deg, #5a7a7a 0%, #2a5a5a 50%, #1a3a3a 100%);
     border: 1px solid #3a6a6a;
@@ -469,7 +483,7 @@ body {
     border-radius: 1px 1px 0 0;
 }
 
-/* === 1-палубный (катер) === */
+/* 1-палубный */
 .cell.ship[data-size="1"]::before {
     background: radial-gradient(ellipse at 50% 45%, #4a7a5a, #1a4a2a);
     border-radius: 50%;
@@ -491,7 +505,6 @@ body {
     background: none;
 }
 
-/* Анимация флага */
 @keyframes flagWave {
     0%, 100% { transform: rotate(-3deg); }
     50% { transform: rotate(6deg); }
@@ -505,21 +518,18 @@ body {
 .cell.ship.skin-gold::after {
     background: linear-gradient(180deg, #f0e06a 0%, #d4a017 100%) !important;
 }
-
 .cell.ship.skin-bronze::before {
     background: linear-gradient(180deg, #cd7f32 0%, #8d6e3f 50%, #6d4e2f 100%) !important;
 }
 .cell.ship.skin-bronze::after {
     background: linear-gradient(180deg, #dd8f42 0%, #9d7e4f 100%) !important;
 }
-
 .cell.ship.skin-steel::before {
     background: linear-gradient(180deg, #6a8a9a 0%, #4a6a7a 50%, #2a4a5a 100%) !important;
 }
 .cell.ship.skin-steel::after {
     background: linear-gradient(180deg, #8aaaba 0%, #5a7a8a 100%) !important;
 }
-
 .cell.ship.skin-pirate::before {
     background: linear-gradient(180deg, #3a2a2a 0%, #2a1a1a 50%, #1a0a0a 100%) !important;
     border: 1px solid #5a3a3a !important;
@@ -546,7 +556,6 @@ body {
     border: none;
     animation: hitAnim 0.5s ease;
 }
-
 .cell.hit::before {
     content: '✕';
     position: absolute;
@@ -558,7 +567,6 @@ body {
     color: #ff3333;
     text-shadow: 0 0 20px rgba(255,50,50,0.6), 0 0 60px rgba(255,50,50,0.3);
 }
-
 .cell.hit::after {
     content: '';
     position: absolute;
@@ -568,7 +576,6 @@ body {
     animation: hitGlow 0.6s ease;
     pointer-events: none;
 }
-
 @keyframes hitAnim {
     0% { transform: scale(1.5); opacity: 0; }
     50% { transform: scale(0.8); opacity: 1; }
@@ -584,7 +591,6 @@ body {
     background: rgba(20, 60, 100, 0.15);
     border: 1px solid rgba(100, 200, 255, 0.06);
 }
-
 .cell.miss::after {
     content: '·';
     position: absolute;
@@ -595,7 +601,6 @@ body {
     font-size: 20px;
     animation: missRipple 0.3s ease;
 }
-
 @keyframes missRipple {
     0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
     50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
@@ -607,7 +612,6 @@ body {
     background: rgba(10, 30, 60, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.02);
 }
-
 .cell.fog::after {
     content: '~';
     position: absolute;
@@ -628,14 +632,12 @@ body {
     opacity: 0;
     transition: opacity 0.2s;
 }
-
 .cell .crosshair::before,
 .cell .crosshair::after {
     content: '';
     position: absolute;
     background: rgba(255, 255, 255, 0.6);
 }
-
 .cell .crosshair::before {
     width: 2px;
     height: 80%;
@@ -643,7 +645,6 @@ body {
     left: 50%;
     transform: translateX(-50%);
 }
-
 .cell .crosshair::after {
     width: 80%;
     height: 2px;
@@ -651,7 +652,6 @@ body {
     top: 50%;
     transform: translateY(-50%);
 }
-
 .cell .crosshair .dot {
     position: absolute;
     top: 50%;
@@ -663,7 +663,6 @@ body {
     background: rgba(255, 50, 50, 0.8);
     box-shadow: 0 0 10px rgba(255, 50, 50, 0.4);
 }
-
 .cell .crosshair .circle {
     position: absolute;
     top: 50%;
@@ -674,7 +673,6 @@ body {
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
-
 .cell .crosshair .corner {
     position: absolute;
     width: 15%;
@@ -683,45 +681,14 @@ body {
     border-style: solid;
     border-width: 0;
 }
-
-.cell .crosshair .corner-tl {
-    top: 10%;
-    left: 10%;
-    border-top-width: 2px;
-    border-left-width: 2px;
-}
-.cell .crosshair .corner-tr {
-    top: 10%;
-    right: 10%;
-    border-top-width: 2px;
-    border-right-width: 2px;
-}
-.cell .crosshair .corner-bl {
-    bottom: 10%;
-    left: 10%;
-    border-bottom-width: 2px;
-    border-left-width: 2px;
-}
-.cell .crosshair .corner-br {
-    bottom: 10%;
-    right: 10%;
-    border-bottom-width: 2px;
-    border-right-width: 2px;
-}
-
-.cell .crosshair.active {
-    opacity: 1;
-}
+.cell .crosshair .corner-tl { top: 10%; left: 10%; border-top-width: 2px; border-left-width: 2px; }
+.cell .crosshair .corner-tr { top: 10%; right: 10%; border-top-width: 2px; border-right-width: 2px; }
+.cell .crosshair .corner-bl { bottom: 10%; left: 10%; border-bottom-width: 2px; border-left-width: 2px; }
+.cell .crosshair .corner-br { bottom: 10%; right: 10%; border-bottom-width: 2px; border-right-width: 2px; }
 
 .cell.fog:hover .crosshair,
-.cell:not(.hit):not(.miss):hover .crosshair {
-    opacity: 1;
-}
-
-.cell.fog:hover {
-    background: rgba(30, 80, 130, 0.4);
-    border-color: rgba(100, 200, 255, 0.2);
-}
+.cell:not(.hit):not(.miss):hover .crosshair { opacity: 1; }
+.cell.fog:hover { background: rgba(30, 80, 130, 0.4); border-color: rgba(100, 200, 255, 0.2); }
 
 /* === СТАТУС === */
 .status {
@@ -742,36 +709,3 @@ body {
     display: flex;
     justify-content: center;
     gap: 6px;
-    margin-top: 6px;
-}
-
-.btn {
-    background: rgba(42, 106, 170, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #aaddff;
-    padding: 5px 14px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.12s;
-}
-
-.btn:active { transform: scale(0.93); background: rgba(42, 106, 170, 0.35); }
-
-/* === НАСТРОЙКИ === */
-.setting-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: #aaddff;
-    font-size: 14px;
-}
-
-.setting-item select,
-.setting-item input {
-    background: rgba(0, 0, 0, 0.4);
-    color: #fff;
-    border: 1px
