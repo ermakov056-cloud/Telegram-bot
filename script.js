@@ -3,7 +3,7 @@ let tg = window.Telegram?.WebApp;
 let soundEnabled = true;
 
 // === Игровые переменные ===
-let SIZE = 12;
+let SIZE = 10;
 let difficulty = 'medium';
 let gameMode = 'ai';
 let playerBoard, enemyBoard, enemyVisible;
@@ -11,14 +11,65 @@ let playerShips, enemyShips;
 let gameOver = false;
 let isPlayerTurn = true;
 let moves = 0;
-let stats = { wins: 0, losses: 0, shots: 0, hits: 0 };
 let currentGameShots = 0;
 let currentGameHits = 0;
 
-// === КОРАБЛИ ===
-const shipSizes = [6, 5, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+// === КОРАБЛИ (10×10) ===
+const shipSizes = [5, 4, 3, 3, 2, 2, 2, 1, 1, 1];
 
-// === Звуки ===
+// === ПРОФИЛЬ ===
+let profile = {
+    name: 'Капитан',
+    avatar: 0,
+    rating: 1000,
+    wins: 0,
+    losses: 0,
+    shots: 0,
+    hits: 0
+};
+
+// === ЗВАНИЯ ===
+const ranks = [
+    { title: '⚓ Мичман', minRating: 0 },
+    { title: '⚓ Лейтенант', minRating: 200 },
+    { title: '⚓ Капитан-лейтенант', minRating: 500 },
+    { title: '⚓ Капитан 3-го ранга', minRating: 1000 },
+    { title: '⚓ Капитан 2-го ранга', minRating: 2000 },
+    { title: '⚓ Капитан 1-го ранга', minRating: 4000 },
+    { title: '⚓ Контр-адмирал', minRating: 7000 },
+    { title: '⚓ Вице-адмирал', minRating: 12000 },
+    { title: '⚓ Адмирал', minRating: 20000 },
+    { title: '⚓ Гранд-адмирал', minRating: 50000 }
+];
+
+// === ВЕРФЬ ===
+let shipyard = {
+    ships: [
+        { id: 1, name: '🛳 Фрегат', level: 1, damage: 10, hp: 20, price: 0, owned: true },
+        { id: 2, name: '🚢 Эсминец', level: 1, damage: 15, hp: 30, price: 100, owned: false },
+        { id: 3, name: '⛴ Крейсер', level: 1, damage: 25, hp: 40, price: 300, owned: false },
+        { id: 4, name: '🛳 Авианосец', level: 1, damage: 40, hp: 60, price: 800, owned: false },
+        { id: 5, name: '⚓ Линкор', level: 1, damage: 60, hp: 80, price: 1500, owned: false }
+    ]
+};
+
+// === МИССИИ ===
+let missions = [
+    { id: 1, icon: '🏆', title: 'Первая победа', desc: 'Одержать 1 победу в бою', target: 1, progress: 0, completed: false, reward: 50 },
+    { id: 2, icon: '🔥', title: 'Морской волк', desc: 'Одержать 10 побед', target: 10, progress: 0, completed: false, reward: 300 },
+    { id: 3, icon: '🎯', title: 'Снайпер', desc: 'Сделать 50 выстрелов', target: 50, progress: 0, completed: false, reward: 150 },
+    { id: 4, icon: '💥', title: 'Разрушитель', desc: 'Потопить 20 кораблей', target: 20, progress: 0, completed: false, reward: 250 },
+    { id: 5, icon: '⚓', title: 'Адмирал', desc: 'Достичь рейтинга 5000', target: 5000, progress: 0, completed: false, reward: 1000 }
+];
+
+// === КЛАНЫ ===
+let clans = [
+    { id: 1, icon: '🏴', name: 'Чёрная борода', members: 45, level: 10 },
+    { id: 2, icon: '🏴', name: 'Летучий голландец', members: 32, level: 7 },
+    { id: 3, icon: '🏴', name: 'Буревестники', members: 18, level: 4 }
+];
+
+// === ЗВУКИ ===
 let audioCtx = null;
 
 function initAudio() {
@@ -76,22 +127,32 @@ function playSound(type) {
     } catch(e) {}
 }
 
-// === Загрузка/сохранение ===
+// === ЗАГРУЗКА/СОХРАНЕНИЕ ===
+function loadProfile() {
+    const saved = localStorage.getItem('seaBattleProfile');
+    if (saved) {
+        try {
+            const p = JSON.parse(saved);
+            profile = { ...profile, ...p };
+        } catch(e) {}
+    }
+    updateProfileUI();
+}
+
+function saveProfile() {
+    localStorage.setItem('seaBattleProfile', JSON.stringify(profile));
+}
+
 function loadSettings() {
     const saved = localStorage.getItem('seaBattleSettings');
     if (saved) {
         const s = JSON.parse(saved);
-        SIZE = s.size || 12;
+        SIZE = s.size || 10;
         difficulty = s.difficulty || 'medium';
         soundEnabled = s.soundEnabled !== undefined ? s.soundEnabled : true;
         document.getElementById('sizeSelect').value = SIZE;
         document.getElementById('difficultySelect').value = difficulty;
         document.getElementById('soundToggle').checked = soundEnabled;
-    }
-    const statsSaved = localStorage.getItem('seaBattleStats');
-    if (statsSaved) {
-        stats = JSON.parse(statsSaved);
-        updateStatsDisplay();
     }
 }
 
@@ -107,7 +168,206 @@ function saveSettings() {
     soundEnabled = settings.soundEnabled;
 }
 
-// === Игровая логика ===
+// === ПРОФИЛЬ UI ===
+function updateProfileUI() {
+    document.getElementById('playerName').textContent = profile.name;
+    document.getElementById('playerRating').textContent = profile.rating;
+    document.getElementById('winsDisplay').textContent = profile.wins;
+    document.getElementById('lossesDisplay').textContent = profile.losses;
+    
+    const acc = profile.shots > 0 ? Math.round(profile.hits/profile.shots*100) : 0;
+    document.getElementById('accuracyDisplay').textContent = acc + '%';
+    
+    const rank = getRank(profile.rating);
+    document.getElementById('playerRank').textContent = rank;
+}
+
+function getRank(rating) {
+    let current = ranks[0];
+    for (let r of ranks) {
+        if (rating >= r.minRating) current = r;
+    }
+    return current.title;
+}
+
+// === ВЕРФЬ ===
+function renderShipyard() {
+    const container = document.getElementById('shipyardList');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    shipyard.ships.forEach(ship => {
+        const item = document.createElement('div');
+        item.className = 'shipyard-item';
+        
+        const upgradeCost = ship.level * 50 + ship.price;
+        const canUpgrade = ship.owned && profile.rating >= upgradeCost;
+        const canBuy = !ship.owned && profile.rating >= ship.price;
+        
+        item.innerHTML = `
+            <div class="ship-icon">${ship.name.split(' ')[0]}</div>
+            <div class="ship-info">
+                <div class="ship-name">${ship.name}</div>
+                <div class="ship-level">Уровень ${ship.level} ${ship.owned ? '✅' : '🔒'}</div>
+                <div class="ship-stats">⚔️ ${ship.damage} | ❤️ ${ship.hp}</div>
+            </div>
+            <button class="upgrade-btn" ${!canUpgrade && !canBuy ? 'disabled' : ''}>
+                ${ship.owned ? `⬆ ${upgradeCost}⭐` : `Купить ${ship.price}⭐`}
+            </button>
+        `;
+        
+        const btn = item.querySelector('.upgrade-btn');
+        btn.addEventListener('click', () => upgradeShip(ship.id));
+        
+        container.appendChild(item);
+    });
+}
+
+function upgradeShip(id) {
+    const ship = shipyard.ships.find(s => s.id === id);
+    if (!ship) return;
+    
+    if (!ship.owned) {
+        if (profile.rating < ship.price) {
+            alert('Недостаточно рейтинга!');
+            return;
+        }
+        profile.rating -= ship.price;
+        ship.owned = true;
+        ship.level = 1;
+        saveProfile();
+        renderShipyard();
+        updateProfileUI();
+        return;
+    }
+    
+    const cost = ship.level * 50 + ship.price;
+    if (profile.rating < cost) {
+        alert('Недостаточно рейтинга для улучшения!');
+        return;
+    }
+    
+    profile.rating -= cost;
+    ship.level++;
+    ship.damage = Math.floor(ship.damage * 1.2);
+    ship.hp = Math.floor(ship.hp * 1.15);
+    saveProfile();
+    renderShipyard();
+    updateProfileUI();
+}
+
+// === МИССИИ ===
+function renderMissions() {
+    const container = document.getElementById('missionsList');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    missions.forEach(mission => {
+        const item = document.createElement('div');
+        item.className = 'mission-item';
+        
+        const progress = Math.min(mission.progress, mission.target);
+        const done = mission.progress >= mission.target;
+        
+        item.innerHTML = `
+            <div class="mission-icon">${mission.icon}</div>
+            <div class="mission-info">
+                <div class="mission-title">${mission.title} ${done ? '✅' : ''}</div>
+                <div class="mission-desc">${mission.desc}</div>
+                <div class="mission-progress">${progress}/${mission.target}</div>
+            </div>
+            <div class="mission-reward">+${mission.reward}⭐</div>
+        `;
+        
+        container.appendChild(item);
+    });
+}
+
+function updateMissions() {
+    missions.forEach(m => {
+        m.completed = m.progress >= m.target;
+    });
+    renderMissions();
+}
+
+function checkMissions(type, value) {
+    let completed = false;
+    missions.forEach(m => {
+        if (m.completed) return;
+        
+        switch(m.id) {
+            case 1:
+                if (type === 'win' && profile.wins >= m.target) {
+                    m.progress = m.target;
+                    completed = true;
+                }
+                break;
+            case 2:
+                if (type === 'win' && profile.wins >= m.target) {
+                    m.progress = m.target;
+                    completed = true;
+                }
+                break;
+            case 3:
+                if (type === 'shot' && profile.shots >= m.target) {
+                    m.progress = m.target;
+                    completed = true;
+                }
+                break;
+            case 4:
+                if (type === 'kill' && profile.hits >= m.target) {
+                    m.progress = m.target;
+                    completed = true;
+                }
+                break;
+            case 5:
+                if (type === 'rating' && profile.rating >= m.target) {
+                    m.progress = m.target;
+                    completed = true;
+                }
+                break;
+        }
+        
+        if (completed && !m.completed) {
+            m.completed = true;
+            profile.rating += m.reward;
+            saveProfile();
+            updateProfileUI();
+            alert(`🎉 Миссия выполнена! +${m.reward} рейтинга!`);
+        }
+    });
+    updateMissions();
+}
+
+// === КЛАНЫ ===
+function renderClans() {
+    const container = document.getElementById('clansList');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    clans.forEach(clan => {
+        const item = document.createElement('div');
+        item.className = 'clan-item';
+        
+        item.innerHTML = `
+            <div class="clan-icon">${clan.icon}</div>
+            <div class="clan-info">
+                <div class="clan-name">${clan.name}</div>
+                <div class="clan-members">👥 ${clan.members} участников</div>
+                <div class="clan-level">⭐ Уровень ${clan.level}</div>
+            </div>
+            <button class="join-btn">Вступить</button>
+        `;
+        
+        item.querySelector('.join-btn').addEventListener('click', () => {
+            alert(`Вы вступили в клан "${clan.name}"!`);
+        });
+        
+        container.appendChild(item);
+    });
+}
+
+// === ИГРОВАЯ ЛОГИКА ===
 function createEmptyBoard() {
     return Array.from({length: SIZE}, () => Array(SIZE).fill(0));
 }
@@ -159,6 +419,10 @@ function placeShips(board) {
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+    
+    if (id === 'shipyard') renderShipyard();
+    if (id === 'missions') renderMissions();
+    if (id === 'clans') renderClans();
 }
 
 function startGame(mode) {
@@ -200,18 +464,17 @@ function resetGame() {
     document.getElementById('turnIndicator').textContent = '🎯';
     document.getElementById('moveCounter').textContent = '0';
     render();
-    updateStatsDisplay();
+    updateProfileUI();
 }
 
 function render() {
     const p1Board = document.getElementById('playerBoard');
     const p2Board = document.getElementById('enemyBoard');
     
-    // Расчёт размера клеток под горизонтальный экран
-    const maxWidth = Math.min(window.innerWidth * 0.42, 200);
-    const maxHeight = Math.min(window.innerHeight * 0.45, 300);
+    const maxWidth = Math.min(window.innerWidth * 0.42, 190);
+    const maxHeight = Math.min(window.innerHeight * 0.42, 280);
     const containerSize = Math.min(maxWidth, maxHeight);
-    const cellSize = Math.max(16, Math.floor((containerSize - (SIZE - 1) * 2) / SIZE));
+    const cellSize = Math.max(14, Math.floor((containerSize - (SIZE - 1) * 2) / SIZE));
     const gridSize = cellSize * SIZE + (SIZE - 1) * 2;
     
     p1Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
@@ -226,25 +489,22 @@ function render() {
     
     for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
-            // === ИГРОК ===
+            // Игрок
             let cell1 = document.createElement('div');
             cell1.className = 'cell';
             let val = playerBoard[r][c];
             
             if (val === 1) {
                 cell1.classList.add('ship');
-                // Определяем размер корабля для стиля
                 let size = 1;
-                // Проверяем горизонтально
                 let hCount = 1;
                 for (let i = c + 1; i < SIZE && playerBoard[r][i] === 1; i++) hCount++;
                 for (let i = c - 1; i >= 0 && playerBoard[r][i] === 1; i--) hCount++;
-                // Проверяем вертикально
                 let vCount = 1;
                 for (let i = r + 1; i < SIZE && playerBoard[i][c] === 1; i++) vCount++;
                 for (let i = r - 1; i >= 0 && playerBoard[i][c] === 1; i--) vCount++;
                 size = Math.max(hCount, vCount);
-                if (size > 1) cell1.dataset.size = Math.min(size, 6);
+                if (size > 1) cell1.dataset.size = Math.min(size, 5);
             } else if (val === 2) {
                 cell1.classList.add('hit');
                 cell1.textContent = '✕';
@@ -253,7 +513,7 @@ function render() {
             }
             p1Board.appendChild(cell1);
             
-            // === ВРАГ ===
+            // Враг
             let cell2 = document.createElement('div');
             cell2.className = 'cell';
             let v = enemyVisible[r][c];
@@ -292,13 +552,13 @@ function makeShot(row, col) {
     
     moves++;
     currentGameShots++;
-    stats.shots++;
+    profile.shots++;
     
     if (enemyBoard[row][col] === 1) {
         enemyBoard[row][col] = 2;
         enemyVisible[row][col] = 2;
         currentGameHits++;
-        stats.hits++;
+        profile.hits++;
         enemyShips--;
         playSound('hit');
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
@@ -306,15 +566,19 @@ function makeShot(row, col) {
         
         if (enemyShips === 0) {
             gameOver = true;
-            stats.wins++;
+            profile.wins++;
+            profile.rating += 50;
+            saveProfile();
+            checkMissions('win', 1);
+            checkMissions('kill', profile.hits);
             playSound('win');
             showResult(true);
             render();
-            updateStatsDisplay();
+            updateProfileUI();
             return;
         }
         render();
-        updateStatsDisplay();
+        updateProfileUI();
         return;
     } else {
         enemyBoard[row][col] = 3;
@@ -324,7 +588,7 @@ function makeShot(row, col) {
         document.getElementById('status').textContent = '❌ Промах!';
         document.getElementById('turnIndicator').textContent = gameMode === 'pvp' ? '👤2' : '🤖';
         render();
-        updateStatsDisplay();
+        updateProfileUI();
         isPlayerTurn = false;
         
         if (gameMode === 'pvp') {
@@ -354,16 +618,17 @@ function pvpTurn2() {
             if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
             if (playerShips === 0) {
                 gameOver = true;
-                stats.losses++;
+                profile.losses++;
+                saveProfile();
                 playSound('win');
                 showResult(true, 'Игрок 2 победил!');
                 render();
-                updateStatsDisplay();
+                updateProfileUI();
                 return;
             }
             document.getElementById('status').textContent = '🔥 Попадание! Ещё ход!';
             render();
-            updateStatsDisplay();
+            updateProfileUI();
         } else {
             playerBoard[r][c] = 3;
             playSound('miss');
@@ -371,7 +636,7 @@ function pvpTurn2() {
             document.getElementById('turnIndicator').textContent = '🎯';
             isPlayerTurn = true;
             render();
-            updateStatsDisplay();
+            updateProfileUI();
         }
     };
     
@@ -451,11 +716,12 @@ function computerTurn() {
         document.getElementById('status').textContent = `💥 Враг попал в ${String.fromCharCode(65+col)}${row+1}!`;
         if (playerShips === 0) {
             gameOver = true;
-            stats.losses++;
+            profile.losses++;
+            saveProfile();
             playSound('lose');
             showResult(false);
             render();
-            updateStatsDisplay();
+            updateProfileUI();
             return;
         }
         render();
@@ -468,7 +734,7 @@ function computerTurn() {
         isPlayerTurn = true;
         render();
     }
-    updateStatsDisplay();
+    updateProfileUI();
 }
 
 function showResult(won, message) {
@@ -479,8 +745,7 @@ function showResult(won, message) {
     document.getElementById('resultShots').textContent = currentGameShots;
     const acc = currentGameShots > 0 ? Math.round(currentGameHits/currentGameShots*100) : 0;
     document.getElementById('resultAccuracy').textContent = acc + '%';
-    const rating = acc >= 80 ? '⭐⭐⭐' : acc >= 50 ? '⭐⭐' : '⭐';
-    document.getElementById('resultRating').textContent = rating;
+    document.getElementById('resultRatingChange').textContent = won ? '+50' : '+0';
 }
 
 function closeResult() {
@@ -489,7 +754,7 @@ function closeResult() {
 }
 
 function shareResult() {
-    const text = `⚓ Морской бой\nВыстрелов: ${currentGameShots}\nТочность: ${Math.round(currentGameHits/currentGameShots*100)}%\nПобед: ${stats.wins}\nПоражений: ${stats.losses}`;
+    const text = `⚓ Морской бой\nВыстрелов: ${currentGameShots}\nТочность: ${Math.round(currentGameHits/currentGameShots*100)}%\nПобед: ${profile.wins}\nПоражений: ${profile.losses}`;
     if (tg) {
         tg.sendData(JSON.stringify({ type: 'share', text: text }));
     } else if (navigator.share) {
@@ -500,7 +765,7 @@ function shareResult() {
 }
 
 function shareScore() {
-    const text = `⚓ Морской бой\n🏆 Побед: ${stats.wins}\n💀 Поражений: ${stats.losses}\n🎯 Точность: ${stats.shots > 0 ? Math.round(stats.hits/stats.shots*100) : 0}%`;
+    const text = `⚓ Морской бой\n🏆 Побед: ${profile.wins}\n💀 Поражений: ${profile.losses}\n⭐ Рейтинг: ${profile.rating}`;
     if (tg) {
         tg.sendData(JSON.stringify({ type: 'share', text: text }));
     } else if (navigator.share) {
@@ -516,21 +781,31 @@ function toggleSound() {
     if (soundEnabled) playSound('hit');
 }
 
-function updateStatsDisplay() {
-    document.getElementById('winsDisplay').textContent = stats.wins;
-    document.getElementById('lossesDisplay').textContent = stats.losses;
-    const acc = stats.shots > 0 ? Math.round(stats.hits/stats.shots*100) : 0;
-    document.getElementById('accuracyDisplay').textContent = acc + '%';
-    localStorage.setItem('seaBattleStats', JSON.stringify(stats));
+// === СМЕНА АВАТАРА ===
+function changeAvatar() {
+    const avatars = [
+        'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="48" fill="%232a6aaa"/%3E%3Ccircle cx="50" cy="35" r="20" fill="%234a8aca"/%3E%3Ccircle cx="35" cy="30" r="4" fill="%23ffffff"/%3E%3Ccircle cx="65" cy="30" r="4" fill="%23ffffff"/%3E%3Cpath d="M35 50 Q50 65 65 50" stroke="%23ffffff" stroke-width="3" fill="none"/%3E%3C/svg%3E',
+        'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="48" fill="%23aa2a2a"/%3E%3Ccircle cx="50" cy="35" r="20" fill="%23ca4a4a"/%3E%3Ccircle cx="35" cy="30" r="4" fill="%23ffffff"/%3E%3Ccircle cx="65" cy="30" r="4" fill="%23ffffff"/%3E%3Cpath d="M35 55 Q50 40 65 55" stroke="%23ffffff" stroke-width="3" fill="none"/%3E%3C/svg%3E',
+        'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="48" fill="%232aaa6a"/%3E%3Ccircle cx="50" cy="35" r="20" fill="%234acaaa"/%3E%3Ccircle cx="35" cy="30" r="4" fill="%23ffffff"/%3E%3Ccircle cx="65" cy="30" r="4" fill="%23ffffff"/%3E%3Cpath d="M35 50 Q50 65 65 50" stroke="%23ffffff" stroke-width="3" fill="none"/%3E%3C/svg%3E',
+        'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="48" fill="%23aa6a2a"/%3E%3Ccircle cx="50" cy="35" r="20" fill="%23ca8a4a"/%3E%3Ccircle cx="35" cy="30" r="4" fill="%23ffffff"/%3E%3Ccircle cx="65" cy="30" r="4" fill="%23ffffff"/%3E%3Cpath d="M35 50 Q50 60 65 50" stroke="%23ffffff" stroke-width="3" fill="none"/%3E%3C/svg%3E'
+    ];
+    
+    profile.avatar = (profile.avatar + 1) % avatars.length;
+    document.getElementById('avatarImg').src = avatars[profile.avatar];
+    saveProfile();
 }
 
-// === Инициализация ===
+// === ИНИЦИАЛИЗАЦИЯ ===
 document.addEventListener('DOMContentLoaded', function() {
+    loadProfile();
     loadSettings();
-    updateStatsDisplay();
+    updateProfileUI();
     
     document.getElementById('btnVsAI').addEventListener('click', () => startGame('ai'));
     document.getElementById('btnVsPlayer').addEventListener('click', () => startGame('pvp'));
+    document.getElementById('btnShipyard').addEventListener('click', () => showScreen('shipyard'));
+    document.getElementById('btnMissions').addEventListener('click', () => showScreen('missions'));
+    document.getElementById('btnClans').addEventListener('click', () => showScreen('clans'));
     document.getElementById('btnSettings').addEventListener('click', () => showScreen('settings'));
     document.getElementById('btnTutorial').addEventListener('click', () => showScreen('tutorial'));
     document.getElementById('btnShare').addEventListener('click', shareScore);
@@ -538,11 +813,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('backToMenu').addEventListener('click', backToMenu);
     document.getElementById('btnReset').addEventListener('click', resetGame);
     document.getElementById('btnSound').addEventListener('click', toggleSound);
+    document.getElementById('avatarEdit').addEventListener('click', changeAvatar);
     
     document.getElementById('closeSettings').addEventListener('click', function() {
         saveSettings();
         showScreen('menu');
     });
+    document.getElementById('closeShipyard').addEventListener('click', () => showScreen('menu'));
+    document.getElementById('closeMissions').addEventListener('click', () => showScreen('menu'));
+    document.getElementById('closeClans').addEventListener('click', () => showScreen('menu'));
+    
     document.getElementById('sizeSelect').addEventListener('change', saveSettings);
     document.getElementById('difficultySelect').addEventListener('change', saveSettings);
     document.getElementById('soundToggle').addEventListener('change', saveSettings);
@@ -564,6 +844,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 showScreen('menu');
             } else if (document.getElementById('result').classList.contains('active')) {
                 showScreen('menu');
+            } else if (document.getElementById('shipyard').classList.contains('active')) {
+                showScreen('menu');
+            } else if (document.getElementById('missions').classList.contains('active')) {
+                showScreen('menu');
+            } else if (document.getElementById('clans').classList.contains('active')) {
+                showScreen('menu');
             } else {
                 tg.close();
             }
@@ -571,14 +857,12 @@ document.addEventListener('DOMContentLoaded', function() {
         tg.BackButton.show();
     }
     
-    // Перерисовка при повороте экрана
     window.addEventListener('resize', () => {
         if (document.getElementById('game').classList.contains('active')) {
             render();
         }
     });
     
-    // Отслеживаем изменение ориентации
     window.addEventListener('orientationchange', () => {
         setTimeout(() => {
             if (document.getElementById('game').classList.contains('active')) {
