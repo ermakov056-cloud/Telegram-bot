@@ -709,3 +709,130 @@ body {
     display: flex;
     justify-content: center;
     gap: 6px;
+    margin-top: 6px;
+}
+.btn {
+    background: rgba(42, 106, 170, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #aaddff;
+    padding: 5px 14px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+.btn:active { transform: scale(0.93); background: rgba(42, 106, 170, 0.35); }
+
+/* === НАСТРОЙКИ === */
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #aaddff;
+    font-size: 14px;
+}
+.setting-item select,
+.setting-item input {
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+.setting-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #2a6aaa;
+}
+
+/* === РЕЗУЛЬТАТ === */
+.result-container {
+    padding: 24px 16px;
+    border-radius: 16px;
+    text-align: center;
+    margin-top: 16px;
+}
+.result-icon { font-size: 56px; margin-bottom: 6px; }
+.result-container h2 { color: #fff; font-size: 24px; margin-bottom: 2px; }
+.result-container p { color: #88ddff; margin-bottom: 12px; font-size: 14px; }
+.result-stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    color: #88ddff;
+    font-size: 13px;
+}
+.result-stats span { color: #ffcc44; font-weight: bold; }
+
+/* === ВЕРФЬ, СКИНЫ, МИССИИ === */
+#shipyardList, #skinsList, #missionsList {
+    max-height: 350px;
+    overflow-y: auto;
+    margin: 8px 0;
+}
+.shipyard-item, .mission-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.shipyard-item .ship-info,
+.mission-item .mission-info { flex: 1; text-align: left; }
+.shipyard-item .ship-name,
+.mission-item .mission-title { color: #fff; font-size: 13px; font-weight: 600; }
+.shipyard-item .ship-level,
+.mission-item .mission-desc { color: #88ddff; font-size: 11px; }
+.shipyard-item .upgrade-btn {
+    background: linear-gradient(135deg, #2a6aaa, #1a4a8a);
+    border: none;
+    color: white;
+    padding: 3px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+}
+.shipyard-item .upgrade-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* === АДАПТИВ === */
+@media (max-width: 400px) {
+    .boards-wrapper { gap: 3px; }
+    .board-container { padding: 2px; max-width: 49% !important; }
+    .game-container { padding: 4px; }
+    .scores { font-size: 10px; padding: 2px 4px; }
+    .status { font-size: 11px; padding: 4px; min-height: 28px; }
+    .game-header span { font-size: 12px; }
+    .back-btn { font-size: 20px; }
+    .board-title { font-size: 8px; }
+    .cell.ship[data-size="1"]::after { font-size: 10px; }
+    .cell.hit::before { font-size: 14px; }
+}
+
+@media (max-width: 350px) {
+    .board-container { padding: 1px; max-width: 50% !important; }
+    .boards-wrapper { gap: 2px; }
+    .cell.ship[data-size="1"]::after { font-size: 8px; }
+    .cell.hit::before { font-size: 12px; }
+    .cell.miss::after { font-size: 14px; }
+    .cell.fog::after { font-size: 8px; }
+}
+
+@media (max-height: 700px) {
+    .game-container { padding: 4px; }
+    .scores { padding: 2px 6px; font-size: 10px; }
+    .status { font-size: 11px; padding: 4px; min-height: 26px; }
+    .game-header span { font-size: 12px; }
+    .back-btn { font-size: 20px; }
+    .board-title { font-size: 8px; margin-bottom: 2px; }
+}
