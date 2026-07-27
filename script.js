@@ -401,3 +401,187 @@ function computerTurn() {
                 if (playerBoard[i][j] === 2) {
                     for (let [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
                         let nr = i+dx, nc = j+dy;
+                        if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && playerBoard[nr][nc] === 0) {
+                            row = nr; col = nc; found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+            }
+            if (found) break;
+        }
+        if (!found) {
+            let attempts = 0;
+            do {
+                row = Math.floor(Math.random() * SIZE);
+                col = Math.floor(Math.random() * SIZE);
+                attempts++;
+            } while (playerBoard[row][col] !== 0 && attempts < 200);
+        }
+    }
+    
+    if (playerBoard[row][col] === 1) {
+        playerBoard[row][col] = 2;
+        playerShips--;
+        playSound('hit');
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+        document.getElementById('status').textContent = `💥 Враг попал в ${String.fromCharCode(65+col)}${row+1}!`;
+        if (playerShips === 0) {
+            gameOver = true;
+            stats.losses++;
+            playSound('lose');
+            showResult(false);
+            render();
+            updateStatsDisplay();
+            return;
+        }
+        render();
+        setTimeout(() => computerTurn(), 400);
+    } else {
+        playerBoard[row][col] = 3;
+        playSound('miss');
+        document.getElementById('status').textContent = `Враг промахнулся по ${String.fromCharCode(65+col)}${row+1}`;
+        document.getElementById('turnIndicator').textContent = '🎯';
+        isPlayerTurn = true;
+        render();
+    }
+    updateStatsDisplay();
+}
+
+function showResult(won, message) {
+    showScreen('result');
+    document.getElementById('resultIcon').textContent = won ? '🏆' : '💀';
+    document.getElementById('resultTitle').textContent = won ? 'Победа!' : 'Поражение...';
+    document.getElementById('resultDetail').textContent = message || (won ? 'Вы уничтожили все корабли!' : 'Вы проиграли...');
+    document.getElementById('resultShots').textContent = currentGameShots;
+    const acc = currentGameShots > 0 ? Math.round(currentGameHits/currentGameShots*100) : 0;
+    document.getElementById('resultAccuracy').textContent = acc + '%';
+    const rating = acc >= 80 ? '⭐⭐⭐' : acc >= 50 ? '⭐⭐' : '⭐';
+    document.getElementById('resultRating').textContent = rating;
+}
+
+function closeResult() {
+    showScreen('game');
+    resetGame();
+}
+
+function shareResult() {
+    const text = `⚓ Морской бой\nВыстрелов: ${currentGameShots}\nТочность: ${Math.round(currentGameHits/currentGameShots*100)}%\nПобед: ${stats.wins}\nПоражений: ${stats.losses}`;
+    if (tg) {
+        tg.sendData(JSON.stringify({ type: 'share', text: text }));
+    } else if (navigator.share) {
+        navigator.share({ title: 'Морской бой', text: text });
+    } else {
+        alert(text);
+    }
+}
+
+function shareScore() {
+    const text = `⚓ Морской бой\n🏆 Побед: ${stats.wins}\n💀 Поражений: ${stats.losses}\n🎯 Точность: ${stats.shots > 0 ? Math.round(stats.hits/stats.shots*100) : 0}%`;
+    if (tg) {
+        tg.sendData(JSON.stringify({ type: 'share', text: text }));
+    } else if (navigator.share) {
+        navigator.share({ title: 'Морской бой', text: text });
+    } else {
+        alert(text);
+    }
+}
+
+function toggleFog() {
+    fogEnabled = !fogEnabled;
+    document.getElementById('fogToggle').checked = fogEnabled;
+    render();
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    document.getElementById('soundToggle').checked = soundEnabled;
+    if (soundEnabled) playSound('hit');
+}
+
+function updateStatsDisplay() {
+    document.getElementById('winsDisplay').textContent = stats.wins;
+    document.getElementById('lossesDisplay').textContent = stats.losses;
+    const acc = stats.shots > 0 ? Math.round(stats.hits/stats.shots*100) : 0;
+    document.getElementById('accuracyDisplay').textContent = acc + '%';
+    localStorage.setItem('seaBattleStats', JSON.stringify(stats));
+}
+
+// === Инициализация и обработчики событий ===
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+    updateStatsDisplay();
+    
+    // Меню
+    document.getElementById('btnVsAI').addEventListener('click', () => startGame('ai'));
+    document.getElementById('btnVsPlayer').addEventListener('click', () => startGame('pvp'));
+    document.getElementById('btnSettings').addEventListener('click', () => showScreen('settings'));
+    document.getElementById('btnTutorial').addEventListener('click', () => showScreen('tutorial'));
+    document.getElementById('btnShare').addEventListener('click', shareScore);
+    
+    // Игра
+    document.getElementById('backToMenu').addEventListener('click', backToMenu);
+    document.getElementById('btnReset').addEventListener('click', resetGame);
+    document.getElementById('btnFog').addEventListener('click', toggleFog);
+    document.getElementById('btnSound').addEventListener('click', toggleSound);
+    
+    // Настройки
+    document.getElementById('closeSettings').addEventListener('click', function() {
+        saveSettings();
+        showScreen('menu');
+    });
+    document.getElementById('sizeSelect').addEventListener('change', saveSettings);
+    document.getElementById('difficultySelect').addEventListener('change', saveSettings);
+    document.getElementById('fogToggle').addEventListener('change', saveSettings);
+    document.getElementById('soundToggle').addEventListener('change', saveSettings);
+    document.getElementById('showShips').addEventListener('change', saveSettings);
+    
+    // Обучение
+    document.getElementById('closeTutorial').addEventListener('click', () => showScreen('menu'));
+    
+    // Результат
+    document.getElementById('closeResult').addEventListener('click', closeResult);
+    document.getElementById('shareResult').addEventListener('click', shareResult);
+    document.getElementById('backToMenuFromResult').addEventListener('click', backToMenu);
+    
+    // Telegram Back Button
+    if (tg) {
+        tg.onEvent('backButtonClicked', function() {
+            if (document.getElementById('game').classList.contains('active')) {
+                backToMenu();
+            } else if (document.getElementById('settings').classList.contains('active')) {
+                saveSettings();
+                showScreen('menu');
+            } else if (document.getElementById('tutorial').classList.contains('active')) {
+                showScreen('menu');
+            } else if (document.getElementById('result').classList.contains('active')) {
+                showScreen('menu');
+            } else {
+                tg.close();
+            }
+        });
+        tg.BackButton.show();
+    }
+    
+    // Ресайз для адаптации
+    window.addEventListener('resize', () => {
+        if (document.getElementById('game').classList.contains('active')) {
+            render();
+        }
+    });
+});
+
+// Адаптация под тему Телеграма
+if (tg) {
+    const theme = tg.themeParams;
+    if (theme) {
+        document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color || '#0a0a2a');
+        document.documentElement.style.setProperty('--tg-theme-text-color', theme.text_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', theme.hint_color || '#88ddff');
+        document.documentElement.style.setProperty('--tg-theme-button-color', theme.button_color || '#2a6aaa');
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', theme.button_text_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', theme.secondary_bg_color || '#1a1a4a');
+        document.body.style.background = theme.bg_color || '#0a0a2a';
+    }
+}
