@@ -210,7 +210,6 @@ function resetGame() {
     render();
     updateStatsDisplay();
 }
-
 function render() {
     const p1Board = document.getElementById('playerBoard');
     const p2Board = document.getElementById('enemyBoard');
@@ -232,7 +231,7 @@ function render() {
     
     for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
-            // Игрок
+            // === ПОЛЕ ИГРОКА (свои корабли видны) ===
             let cell1 = document.createElement('div');
             cell1.className = 'cell';
             let val = playerBoard[r][c];
@@ -241,20 +240,25 @@ function render() {
             else if (val === 3) cell1.classList.add('miss');
             p1Board.appendChild(cell1);
             
-            // Враг
+            // === ПОЛЕ ВРАГА (корабли НЕ видны НИКОГДА) ===
             let cell2 = document.createElement('div');
             cell2.className = 'cell';
             let v = enemyVisible[r][c];
+            
             if (v === 2) { 
+                // Попадание — показываем красный крест
                 cell2.classList.add('hit'); 
                 cell2.textContent = '✕';
             } else if (v === 3) {
+                // Промах — серая точка
                 cell2.classList.add('miss');
-            } else if (fogEnabled && !showShips && !gameOver) {
+            } else {
+                // Необстрелянная клетка — ВСЕГДА скрыта (туман)
                 cell2.classList.add('fog');
-            } else if (!gameOver && showShips && enemyBoard[r][c] === 1) {
-                cell2.classList.add('ship');
+                // Если хочешь показывать "?" — раскомментируй следующую строку:
+                // cell2.textContent = '?';
             }
+            
             cell2.dataset.row = r;
             cell2.dataset.col = c;
             cell2.addEventListener('click', () => makeShot(r, c));
