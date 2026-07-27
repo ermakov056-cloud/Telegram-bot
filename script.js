@@ -143,7 +143,7 @@ function placeShips(board) {
             let horizontal = Math.random() > 0.5;
             if (canPlace(board, row, col, size, horizontal)) {
                 for (let i = 0; i < size; i++) {
-                    board[row + (horizontal ? 0 : i)][col + (horizontal ? i : 0)] = 1; // ВСЕГДА 1
+                    board[row + (horizontal ? 0 : i)][col + (horizontal ? i : 0)] = 1;
                 }
                 placed = true;
             }
@@ -207,8 +207,11 @@ function render() {
     const p1Board = document.getElementById('playerBoard');
     const p2Board = document.getElementById('enemyBoard');
     
-    const containerWidth = Math.min(window.innerWidth * 0.42, 190);
-    const cellSize = Math.max(18, Math.floor((containerWidth - (SIZE - 1) * 2) / SIZE));
+    // Расчёт размера клеток под горизонтальный экран
+    const maxWidth = Math.min(window.innerWidth * 0.42, 200);
+    const maxHeight = Math.min(window.innerHeight * 0.45, 300);
+    const containerSize = Math.min(maxWidth, maxHeight);
+    const cellSize = Math.max(16, Math.floor((containerSize - (SIZE - 1) * 2) / SIZE));
     const gridSize = cellSize * SIZE + (SIZE - 1) * 2;
     
     p1Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
@@ -223,13 +226,25 @@ function render() {
     
     for (let r = 0; r < SIZE; r++) {
         for (let c = 0; c < SIZE; c++) {
-            // === ИГРОК (свои корабли видны) ===
+            // === ИГРОК ===
             let cell1 = document.createElement('div');
             cell1.className = 'cell';
             let val = playerBoard[r][c];
             
             if (val === 1) {
                 cell1.classList.add('ship');
+                // Определяем размер корабля для стиля
+                let size = 1;
+                // Проверяем горизонтально
+                let hCount = 1;
+                for (let i = c + 1; i < SIZE && playerBoard[r][i] === 1; i++) hCount++;
+                for (let i = c - 1; i >= 0 && playerBoard[r][i] === 1; i--) hCount++;
+                // Проверяем вертикально
+                let vCount = 1;
+                for (let i = r + 1; i < SIZE && playerBoard[i][c] === 1; i++) vCount++;
+                for (let i = r - 1; i >= 0 && playerBoard[i][c] === 1; i--) vCount++;
+                size = Math.max(hCount, vCount);
+                if (size > 1) cell1.dataset.size = Math.min(size, 6);
             } else if (val === 2) {
                 cell1.classList.add('hit');
                 cell1.textContent = '✕';
@@ -238,7 +253,7 @@ function render() {
             }
             p1Board.appendChild(cell1);
             
-            // === ВРАГ (корабли скрыты) ===
+            // === ВРАГ ===
             let cell2 = document.createElement('div');
             cell2.className = 'cell';
             let v = enemyVisible[r][c];
@@ -267,16 +282,8 @@ function render() {
 }
 
 function makeShot(row, col) {
-    console.log('Выстрел по:', row, col);
-    
-    if (gameOver) {
-        console.log('Игра окончена');
-        return;
-    }
-    if (!isPlayerTurn) {
-        console.log('Не ваш ход');
-        return;
-    }
+    if (gameOver) return;
+    if (!isPlayerTurn) return;
     if (enemyVisible[row][col] !== 0) {
         document.getElementById('status').textContent = 'Сюда уже стреляли!';
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
@@ -287,7 +294,6 @@ function makeShot(row, col) {
     currentGameShots++;
     stats.shots++;
     
-    // Попадание
     if (enemyBoard[row][col] === 1) {
         enemyBoard[row][col] = 2;
         enemyVisible[row][col] = 2;
@@ -310,9 +316,7 @@ function makeShot(row, col) {
         render();
         updateStatsDisplay();
         return;
-    } 
-    // Промах
-    else {
+    } else {
         enemyBoard[row][col] = 3;
         enemyVisible[row][col] = 3;
         playSound('miss');
@@ -396,7 +400,6 @@ function computerTurn() {
             attempts++;
         } while ((playerBoard[row][col] !== 0) && attempts < 300);
     } else if (difficulty === 'hard' || difficulty === 'nightmare') {
-        // Алгоритм охоты
         let found = false;
         for (let i = 0; i < SIZE; i++) {
             for (let j = 0; j < SIZE; j++) {
@@ -413,7 +416,6 @@ function computerTurn() {
             col = Math.floor(Math.random() * SIZE);
         }
     } else {
-        // Средний - добивает подбитые
         let found = false;
         for (let i = 0; i < SIZE; i++) {
             for (let j = 0; j < SIZE; j++) {
@@ -441,7 +443,6 @@ function computerTurn() {
         }
     }
     
-    // Выстрел компьютера
     if (playerBoard[row][col] === 1) {
         playerBoard[row][col] = 2;
         playerShips--;
@@ -570,10 +571,20 @@ document.addEventListener('DOMContentLoaded', function() {
         tg.BackButton.show();
     }
     
+    // Перерисовка при повороте экрана
     window.addEventListener('resize', () => {
         if (document.getElementById('game').classList.contains('active')) {
             render();
         }
+    });
+    
+    // Отслеживаем изменение ориентации
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            if (document.getElementById('game').classList.contains('active')) {
+                render();
+            }
+        }, 300);
     });
 });
 
