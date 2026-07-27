@@ -167,7 +167,7 @@ body {
     padding: 10px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 14px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -209,6 +209,37 @@ body {
 .player-name { font-size: 16px; font-weight: 700; color: #fff; }
 .player-rank { font-size: 12px; color: #ffcc44; font-weight: 600; }
 .player-rating { font-size: 11px; color: #88ddff; }
+
+.daily-bonus {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 200, 50, 0.1);
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 200, 50, 0.15);
+}
+
+.daily-bonus span {
+    color: #ffcc44;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.btn-small {
+    background: #ffcc44;
+    border: none;
+    color: #0a1628;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-small:active { transform: scale(0.95); }
+.btn-small:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .menu-stats {
     display: flex;
@@ -287,7 +318,7 @@ body {
     padding: 4px 8px;
     border-radius: 10px;
     margin-bottom: 6px;
-    font-size: 12px;
+    font-size: 11px;
     color: #88ddff;
     border: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -505,6 +536,18 @@ body {
     background: none;
 }
 
+/* Анимация потопления */
+.cell.ship.sinking {
+    animation: sinkShip 1.2s ease forwards;
+}
+
+@keyframes sinkShip {
+    0% { transform: scale(1); opacity: 1; }
+    30% { transform: scale(1.1); opacity: 0.8; }
+    60% { transform: scale(0.8) rotate(10deg); opacity: 0.5; }
+    100% { transform: scale(0) rotate(20deg); opacity: 0; }
+}
+
 @keyframes flagWave {
     0%, 100% { transform: rotate(-3deg); }
     50% { transform: rotate(6deg); }
@@ -548,6 +591,12 @@ body {
     transform: translate(-50%, -50%);
     font-size: 8px;
     color: #fff;
+}
+.cell.ship.skin-ice::before {
+    background: linear-gradient(180deg, #8ac8e8 0%, #5a9aba 50%, #3a7a9a 100%) !important;
+}
+.cell.ship.skin-ice::after {
+    background: linear-gradient(180deg, #aad8f0 0%, #7aaac8 100%) !important;
 }
 
 /* === ПОПАДАНИЕ === */
@@ -817,6 +866,8 @@ body {
     .board-title { font-size: 8px; }
     .cell.ship[data-size="1"]::after { font-size: 10px; }
     .cell.hit::before { font-size: 14px; }
+    .daily-bonus { flex-direction: column; gap: 6px; }
+    .daily-bonus span { font-size: 12px; }
 }
 
 @media (max-width: 350px) {
@@ -835,4 +886,10 @@ body {
     .game-header span { font-size: 12px; }
     .back-btn { font-size: 20px; }
     .board-title { font-size: 8px; margin-bottom: 2px; }
+    .profile-header { padding: 6px; margin-bottom: 6px; }
+    .avatar-container { width: 40px; height: 40px; }
+    .player-name { font-size: 14px; }
+    .menu-stats { padding: 4px; font-size: 10px; }
+    .menu-btn { padding: 8px; font-size: 12px; }
+    .daily-bonus { padding: 4px 8px; }
 }
