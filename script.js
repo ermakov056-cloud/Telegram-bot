@@ -1,3 +1,22 @@
+// === Telegram интеграция ===
+let tg = window.Telegram.WebApp;
+
+// Адаптация под тему Телеграма
+function applyTelegramTheme() {
+    if (!tg) return;
+    const theme = tg.themeParams;
+    document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color || '#0a0a2a');
+    document.documentElement.style.setProperty('--tg-theme-text-color', theme.text_color || '#ffffff');
+    document.documentElement.style.setProperty('--tg-theme-hint-color', theme.hint_color || '#88ddff');
+    document.documentElement.style.setProperty('--tg-theme-button-color', theme.button_color || '#2a6aaa');
+    document.documentElement.style.setProperty('--tg-theme-button-text-color', theme.button_text_color || '#ffffff');
+    document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', theme.secondary_bg_color || '#1a1a4a');
+    
+    // Цвет фона
+    document.body.style.background = theme.bg_color || '#0a0a2a';
+}
+
+// === Игровая логика ===
 let SIZE = 8;
 let difficulty = 'medium';
 let showShips = true;
@@ -7,6 +26,8 @@ let playerShips, enemyShips, p2Ships;
 let gameOver = false;
 let isPlayerTurn = true;
 let stats = { wins: 0, losses: 0, shots: 0, hits: 0 };
+let currentGameShots = 0;
+let currentGameHits = 0;
 const shipSizes = [3, 2, 2, 1, 1, 1];
 
 // Загрузка настроек
@@ -90,19 +111,29 @@ function placeShips(board) {
 
 function startGame(mode) {
     gameMode = mode;
+    tg?.expand(); // Разворачиваем приложение на весь экран
+    
     document.getElementById('menu').style.display = 'none';
     document.getElementById('game').style.display = 'block';
+    document.getElementById('settings').style.display = 'none';
+    document.getElementById('result').style.display = 'none';
+    
     if (mode === 'pvp') {
-        document.getElementById('boardTitle2').textContent = 'Поле игрока 2';
+        document.getElementById('enemyBoardTitle').textContent = 'Поле игрока 2';
+        document.getElementById('gameTitle').textContent = '👥 2 игрока';
     } else {
-        document.getElementById('boardTitle2').textContent = 'Поле противника';
+        document.getElementById('enemyBoardTitle').textContent = 'Поле противника';
+        document.getElementById('gameTitle').textContent = '🤖 Против ИИ';
     }
     resetGame();
 }
 
 function backToMenu() {
     document.getElementById('game').style.display = 'none';
+    document.getElementById('settings').style.display = 'none';
+    document.getElementById('result').style.display = 'none';
     document.getElementById('menu').style.display = 'block';
+    tg?.close(); // Сворачиваем приложение
 }
 
 function openSettings() {
@@ -135,7 +166,10 @@ function resetGame() {
     enemyShips = playerShips;
     gameOver = false;
     isPlayerTurn = true;
+    currentGameShots = 0;
+    currentGameHits = 0;
     document.getElementById('status').textContent = 'Нажми на клетку чтобы выстрелить';
+    document.getElementById('turnIndicator').textContent = '🎯';
     render();
     updateStatsDisplay();
 }
@@ -143,8 +177,9 @@ function resetGame() {
 function render() {
     const p1Board = document.getElementById('playerBoard');
     const p2Board = document.getElementById('enemyBoard');
-    p1Board.style.gridTemplateColumns = `repeat(${SIZE}, ${Math.min(28, 280/SIZE)}px)`;
-    p2Board.style.gridTemplateColumns = `repeat(${SIZE}, ${Math.min(28, 280/SIZE)}px)`;
+    const cellSize = Math.min(32, Math.floor(280 / SIZE));
+    p1Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
+    p2Board.style.gridTemplateColumns = `repeat(${SIZE}, ${cellSize}px)`;
     
     p1Board.innerHTML = '';
     p2Board.innerHTML = '';
@@ -196,21 +231,26 @@ function makeShot(row, col) {
     
     if (visible[row][col] !== 0) {
         document.getElementById('status').textContent = 'Сюда уже стреляли!';
+        tg?.HapticFeedback.impactOccurred('light'); // Вибрация
         return;
     }
     
+    currentGameShots++;
     stats.shots++;
     
     if (board[row][col] === 1) {
         board[row][col] = 2;
         visible[row][col] = 2;
+        currentGameHits++;
         stats.hits++;
+        tg?.HapticFeedback.impactOccurred('heavy'); // Вибрация при попадании
+        
         if (gameMode === 'pvp') {
             p2Ships--;
             if (p2Ships === 0) {
                 gameOver = true;
                 stats.wins++;
-                document.getElementById('status').textContent = '🏆 ИГРОК 1 ПОБЕДИЛ!';
+                showResult(true, 'Игрок 1 победил!');
                 render();
                 updateStatsDisplay();
                 return;
@@ -220,7 +260,7 @@ function makeShot(row, col) {
             if (enemyShips === 0) {
                 gameOver = true;
                 stats.wins++;
-                document.getElementById('status').textContent = '🏆 ВЫ ПОБЕДИЛИ!';
+                showResult(true, 'Вы уничтожили все корабли!');
                 render();
                 updateStatsDisplay();
                 return;
@@ -232,16 +272,19 @@ function makeShot(row, col) {
         return;
     } else {
         visible[row][col] = 3;
+        tg?.HapticFeedback.impactOccurred('light');
         document.getElementById('status').textContent = '❌ Промах!';
         render();
         updateStatsDisplay();
         if (gameMode === 'pvp') {
             isPlayerTurn = false;
+            document.getElementById('turnIndicator').textContent = '👤2';
             document.getElementById('status').textContent = 'Ход игрока 2';
-            setTimeout(() => pvpTurn2(), 400);
+            setTimeout(() => pvpTurn2(), 300);
         } else {
             isPlayerTurn = false;
-            setTimeout(() => computerTurn(), 500);
+            document.getElementById('turnIndicator').textContent = '🤖';
+            setTimeout(() => computerTurn(), 400);
         }
     }
 }
@@ -249,10 +292,8 @@ function makeShot(row, col) {
 function pvpTurn2() {
     if (gameOver) return;
     document.getElementById('status').textContent = 'Игрок 2, твой ход!';
-    // Ждём клик игрока 2
-    const oldClick = document.querySelectorAll('#enemyBoard .cell');
-    // Просто разблокируем клики для игрока 2 (кликать по полю игрока 1)
-    // Временно переключаем логику
+    document.getElementById('turnIndicator').textContent = '👤2';
+    
     const tempClick = (r, c) => {
         if (gameOver) return;
         if (playerBoard[r][c] !== 0) {
@@ -262,10 +303,11 @@ function pvpTurn2() {
         if (playerBoard[r][c] === 1) {
             playerBoard[r][c] = 2;
             playerShips--;
+            tg?.HapticFeedback.impactOccurred('heavy');
             if (playerShips === 0) {
                 gameOver = true;
                 stats.losses++;
-                document.getElementById('status').textContent = '🏆 ИГРОК 2 ПОБЕДИЛ!';
+                showResult(true, 'Игрок 2 победил!');
                 render();
                 updateStatsDisplay();
                 return;
@@ -276,13 +318,13 @@ function pvpTurn2() {
         } else {
             playerBoard[r][c] = 3;
             document.getElementById('status').textContent = '❌ Промах! Ход игрока 1';
+            document.getElementById('turnIndicator').textContent = '🎯';
             isPlayerTurn = true;
             render();
             updateStatsDisplay();
         }
     };
     
-    // Переопределяем клики для поля игрока 1
     const cells = document.querySelectorAll('#playerBoard .cell');
     cells.forEach((cell, index) => {
         const r = Math.floor(index / SIZE);
@@ -294,18 +336,17 @@ function pvpTurn2() {
 
 function computerTurn() {
     if (gameOver) return;
+    document.getElementById('turnIndicator').textContent = '🤖';
     
     let row, col;
     if (difficulty === 'easy') {
-        // Случайный
         let attempts = 0;
         do {
             row = Math.floor(Math.random() * SIZE);
             col = Math.floor(Math.random() * SIZE);
             attempts++;
-        } while ((playerBoard[row][col] !== 0 || playerBoard[row][col] === 1) && attempts < 200);
+        } while ((playerBoard[row][col] !== 0 && playerBoard[row][col] !== 1) && attempts < 200);
     } else if (difficulty === 'hard') {
-        // Алгоритм охоты
         for (let i = 0; i < SIZE; i++) {
             for (let j = 0; j < SIZE; j++) {
                 if ((i + j) % 2 === 0 && playerBoard[i][j] === 0) {
@@ -320,7 +361,6 @@ function computerTurn() {
             col = Math.floor(Math.random() * SIZE);
         }
     } else {
-        // Средний - добивает
         let found = false;
         for (let i = 0; i < SIZE; i++) {
             for (let j = 0; j < SIZE; j++) {
@@ -350,11 +390,12 @@ function computerTurn() {
     if (playerBoard[row][col] === 1) {
         playerBoard[row][col] = 2;
         playerShips--;
+        tg?.HapticFeedback.impactOccurred('heavy');
         document.getElementById('status').textContent = `💥 Враг попал в ${String.fromCharCode(65+col)}${row+1}!`;
         if (playerShips === 0) {
             gameOver = true;
             stats.losses++;
-            document.getElementById('status').textContent = '💀 ВЫ ПРОИГРАЛИ...';
+            showResult(false, 'Вы проиграли...');
             render();
             updateStatsDisplay();
             return;
@@ -364,20 +405,76 @@ function computerTurn() {
     } else {
         playerBoard[row][col] = 3;
         document.getElementById('status').textContent = `Враг промахнулся по ${String.fromCharCode(65+col)}${row+1}`;
+        document.getElementById('turnIndicator').textContent = '🎯';
         isPlayerTurn = true;
         render();
     }
     updateStatsDisplay();
 }
 
+function showResult(won, message) {
+    document.getElementById('game').style.display = 'none';
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('resultIcon').textContent = won ? '🏆' : '💀';
+    document.getElementById('resultTitle').textContent = won ? 'Победа!' : 'Поражение...';
+    document.getElementById('resultDetail').textContent = message;
+    document.getElementById('resultShots').textContent = currentGameShots;
+    const acc = currentGameShots > 0 ? Math.round(currentGameHits/currentGameShots*100) : 0;
+    document.getElementById('resultAccuracy').textContent = acc + '%';
+}
+
+function closeResult() {
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('game').style.display = 'block';
+    resetGame();
+}
+
+function shareResult() {
+    const text = `⚓ Морской бой\nВыстрелов: ${currentGameShots}\nТочность: ${Math.round(currentGameHits/currentGameShots*100)}%\nПобед: ${stats.wins}\nПоражений: ${stats.losses}`;
+    if (tg) {
+        tg.sendData(JSON.stringify({ type: 'share', text: text }));
+    } else {
+        navigator.share?.({ title: 'Морской бой', text: text });
+    }
+}
+
+function shareScore() {
+    const text = `⚓ Морской бой\n🏆 Побед: ${stats.wins}\n💀 Поражений: ${stats.losses}\n🎯 Точность: ${stats.shots > 0 ? Math.round(stats.hits/stats.shots*100) : 0}%`;
+    if (tg) {
+        tg.sendData(JSON.stringify({ type: 'share', text: text }));
+    } else {
+        navigator.share?.({ title: 'Морской бой', text: text });
+    }
+}
+
+function toggleColors() {
+    showShips = !showShips;
+    render();
+}
+
 function updateStatsDisplay() {
-    document.getElementById('statsWins').textContent = stats.wins;
-    document.getElementById('statsLosses').textContent = stats.losses;
+    document.getElementById('winsDisplay').textContent = stats.wins;
+    document.getElementById('lossesDisplay').textContent = stats.losses;
     const acc = stats.shots > 0 ? Math.round(stats.hits/stats.shots*100) : 0;
-    document.getElementById('statsAccuracy').textContent = acc + '%';
+    document.getElementById('accuracyDisplay').textContent = acc + '%';
     localStorage.setItem('seaBattleStats', JSON.stringify(stats));
 }
 
 // Инициализация
+applyTelegramTheme();
 loadSettings();
 updateStatsDisplay();
+
+// Обработка кнопки "Назад" в Телеграме
+tg?.onEvent('backButtonClicked', () => {
+    if (document.getElementById('game').style.display === 'block') {
+        backToMenu();
+    } else if (document.getElementById('settings').style.display === 'block') {
+        closeSettings();
+    } else {
+        tg?.close();
+    }
+});
+
+// Показываем кнопку назад в Телеграме
+tg?.BackButton.show();
