@@ -9,10 +9,24 @@
 </head>
 <body>
     <div id="app">
-        <div class="waves-bg">
-            <div class="wave wave1"></div>
-            <div class="wave wave2"></div>
-            <div class="wave wave3"></div>
+        <!-- ФОН -->
+        <div class="ocean-bg">
+            <div class="sky">
+                <div class="sun"></div>
+                <div class="cloud cloud1"></div>
+                <div class="cloud cloud2"></div>
+                <div class="cloud cloud3"></div>
+            </div>
+            <div class="ocean">
+                <div class="wave wave1"></div>
+                <div class="wave wave2"></div>
+                <div class="wave wave3"></div>
+                <div class="wave wave4"></div>
+            </div>
+            <div class="ships-bg">
+                <div class="ship-bg ship1">⛵</div>
+                <div class="ship-bg ship2">🚢</div>
+            </div>
         </div>
 
         <!-- МЕНЮ -->
@@ -36,7 +50,7 @@
                     <div>🎯 <span id="accuracyDisplay">0%</span></div>
                 </div>
                 
-                <button class="menu-btn primary" id="btnVsAI">🤖 Против ИИ</button>
+                <button class="menu-btn primary" id="btnVsAI">⚔️ Против ИИ</button>
                 <button class="menu-btn" id="btnVsPlayer">👥 С другом</button>
                 <button class="menu-btn secondary" id="btnShipyard">⚓ Верфь</button>
                 <button class="menu-btn secondary" id="btnMissions">📜 Миссии</button>
@@ -61,11 +75,11 @@
                 
                 <div class="boards-wrapper">
                     <div class="board-container">
-                        <div class="board-title">Ваше поле</div>
+                        <div class="board-title">⚓ Ваша эскадра</div>
                         <div class="board" id="playerBoard"></div>
                     </div>
                     <div class="board-container">
-                        <div class="board-title" id="enemyBoardTitle">Поле врага</div>
+                        <div class="board-title" id="enemyBoardTitle">🌊 Акватория</div>
                         <div class="board" id="enemyBoard"></div>
                     </div>
                 </div>
