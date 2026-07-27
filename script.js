@@ -13,18 +13,22 @@ var isPlayerTurn = true;
 var moves = 0;
 var currentGameShots = 0;
 var currentGameHits = 0;
+var sunkShips = 0;
 
-// === КОРАБЛИ ===
+// === КОРАБЛИ (классика) ===
+// 1x4, 2x3, 3x2, 4x1
 var shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
 
 // === ПРОФИЛЬ ===
 var profile = {
     name: 'Капитан',
     rating: 1000,
+    coins: 0,
     wins: 0,
     losses: 0,
     shots: 0,
-    hits: 0
+    hits: 0,
+    dailyBonus: 0
 };
 
 var ranks = [
@@ -33,7 +37,9 @@ var ranks = [
     { title: '⚓ Капитан-лейтенант', minRating: 500 },
     { title: '⚓ Капитан 3-го ранга', minRating: 1000 },
     { title: '⚓ Капитан 2-го ранга', minRating: 2000 },
-    { title: '⚓ Капитан 1-го ранга', minRating: 4000 }
+    { title: '⚓ Капитан 1-го ранга', minRating: 4000 },
+    { title: '⚓ Контр-адмирал', minRating: 7000 },
+    { title: '⚓ Адмирал', minRating: 12000 }
 ];
 
 // === СКИНЫ ===
@@ -43,7 +49,8 @@ var skinList = [
     { id: 1, name: 'Золотой', icon: '✨', price: 500, owned: false },
     { id: 2, name: 'Бронзовый', icon: '🏅', price: 300, owned: false },
     { id: 3, name: 'Стальной', icon: '⚓', price: 400, owned: false },
-    { id: 4, name: 'Пиратский', icon: '🏴', price: 800, owned: false }
+    { id: 4, name: 'Пиратский', icon: '🏴', price: 800, owned: false },
+    { id: 5, name: 'Ледяной', icon: '❄️', price: 600, owned: false }
 ];
 
 // === ВЕРФЬ ===
@@ -60,7 +67,9 @@ var shipyard = {
 var missions = [
     { id: 1, icon: '🏆', title: 'Первая победа', desc: 'Одержать 1 победу', progress: 0, target: 1, reward: 50 },
     { id: 2, icon: '🔥', title: 'Морской волк', desc: 'Одержать 10 побед', progress: 0, target: 10, reward: 300 },
-    { id: 3, icon: '🎯', title: 'Снайпер', desc: 'Сделать 50 выстрелов', progress: 0, target: 50, reward: 150 }
+    { id: 3, icon: '🎯', title: 'Снайпер', desc: 'Сделать 50 выстрелов', progress: 0, target: 50, reward: 150 },
+    { id: 4, icon: '💥', title: 'Разрушитель', desc: 'Потопить 20 кораблей', progress: 0, target: 20, reward: 250 },
+    { id: 5, icon: '⭐', title: 'Адмирал', desc: 'Достичь рейтинга 5000', progress: 0, target: 5000, reward: 1000 }
 ];
 
 // === ЗВУКИ ===
@@ -90,17 +99,31 @@ function playSound(type) {
             osc.start(audioCtx.currentTime);
             osc.stop(audioCtx.currentTime + 0.12);
         } else if (type === 'win') {
-            [523, 659, 784].forEach(function(freq, i) {
+            [523, 659, 784, 1047].forEach(function(freq, i) {
                 var o = audioCtx.createOscillator();
                 var g = audioCtx.createGain();
                 o.connect(g);
                 g.connect(audioCtx.destination);
-                o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15);
-                g.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.15);
-                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.2);
-                o.start(audioCtx.currentTime + i * 0.15);
-                o.stop(audioCtx.currentTime + i * 0.15 + 0.2);
+                o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.12);
+                g.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.12);
+                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.12 + 0.2);
+                o.start(audioCtx.currentTime + i * 0.12);
+                o.stop(audioCtx.currentTime + i * 0.12 + 0.2);
             });
+        } else if (type === 'lose') {
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.5);
+        } else if (type === 'sink') {
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.6);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.6);
         }
     } catch(e) {}
 }
@@ -153,6 +176,7 @@ function updateUI() {
     document.getElementById('playerRating').textContent = profile.rating;
     document.getElementById('winsDisplay').textContent = profile.wins;
     document.getElementById('lossesDisplay').textContent = profile.losses;
+    document.getElementById('coinsDisplay').textContent = profile.coins;
     var acc = profile.shots > 0 ? Math.round(profile.hits/profile.shots*100) : 0;
     document.getElementById('accuracyDisplay').textContent = acc + '%';
     
@@ -161,6 +185,30 @@ function updateUI() {
         if (profile.rating >= ranks[i].minRating) rank = ranks[i];
     }
     document.getElementById('playerRank').textContent = rank.title;
+    
+    // Ежедневный бонус
+    var lastBonus = localStorage.getItem('lastBonusDate');
+    var today = new Date().toDateString();
+    if (lastBonus === today) {
+        document.getElementById('claimBonus').disabled = true;
+        document.getElementById('claimBonus').textContent = '✅ Получено';
+    } else {
+        document.getElementById('claimBonus').disabled = false;
+        document.getElementById('claimBonus').textContent = 'Забрать +50⭐';
+    }
+}
+
+function claimDailyBonus() {
+    var lastBonus = localStorage.getItem('lastBonusDate');
+    var today = new Date().toDateString();
+    if (lastBonus === today) return;
+    
+    profile.rating += 50;
+    profile.coins += 10;
+    localStorage.setItem('lastBonusDate', today);
+    saveProfile();
+    updateUI();
+    alert('🎁 Вы получили +50 рейтинга и +10 монет!');
 }
 
 // === ИГРОВАЯ ЛОГИКА ===
@@ -262,10 +310,12 @@ function resetGame() {
     moves = 0;
     currentGameShots = 0;
     currentGameHits = 0;
+    sunkShips = 0;
     
     document.getElementById('status').textContent = '🌊 Нажми на клетку чтобы выстрелить';
     document.getElementById('turnIndicator').textContent = '🎯';
     document.getElementById('moveCounter').textContent = '0';
+    document.getElementById('sunkShips').textContent = '0';
     render();
 }
 
@@ -279,6 +329,47 @@ function getShipSize(row, col, board) {
     var size = Math.max(hCount, vCount);
     if (size > 4) size = 4;
     return size;
+}
+
+function checkShipSunk(row, col, board) {
+    // Проверяем, потоплен ли корабль
+    var shipCells = [];
+    var queue = [{r: row, c: col}];
+    var visited = {};
+    visited[row + ',' + col] = true;
+    
+    while (queue.length > 0) {
+        var curr = queue.shift();
+        shipCells.push(curr);
+        var dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+        for (var d = 0; d < dirs.length; d++) {
+            var nr = curr.r + dirs[d][0];
+            var nc = curr.c + dirs[d][1];
+            var key = nr + ',' + nc;
+            if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && 
+                board[nr][nc] === 2 && !visited[key]) {
+                visited[key] = true;
+                queue.push({r: nr, c: nc});
+            }
+        }
+    }
+    
+    // Проверяем, все ли клетки корабля подбиты
+    var allHit = true;
+    for (var i = 0; i < shipCells.length; i++) {
+        var r = shipCells[i].r;
+        var c = shipCells[i].c;
+        if (board[r][c] !== 2) {
+            allHit = false;
+            break;
+        }
+    }
+    
+    if (allHit && shipCells.length > 0) {
+        // Корабль потоплен!
+        return shipCells;
+    }
+    return null;
 }
 
 function render() {
@@ -324,6 +415,7 @@ function render() {
     else if (currentSkin === 2) skinClass = 'skin-bronze';
     else if (currentSkin === 3) skinClass = 'skin-steel';
     else if (currentSkin === 4) skinClass = 'skin-pirate';
+    else if (currentSkin === 5) skinClass = 'skin-ice';
     
     for (var r = 0; r < SIZE; r++) {
         for (var c = 0; c < SIZE; c++) {
@@ -391,6 +483,7 @@ function render() {
     document.getElementById('p1Ships').textContent = playerShips;
     document.getElementById('p2Ships').textContent = enemyShips;
     document.getElementById('moveCounter').textContent = moves;
+    document.getElementById('sunkShips').textContent = sunkShips;
 }
 
 // === ВЫСТРЕЛ ===
@@ -420,19 +513,37 @@ function makeShot(row, col) {
         profile.hits++;
         enemyShips--;
         playSound('hit');
-        document.getElementById('status').textContent = '💥 ПОПАДАНИЕ! Ещё ход!';
+        document.getElementById('status').textContent = '💥 ПОПАДАНИЕ!';
+        
+        // Проверяем, потоплен ли корабль
+        var sunk = checkShipSunk(row, col, enemyBoard);
+        if (sunk) {
+            sunkShips++;
+            playSound('sink');
+            document.getElementById('status').textContent = '💀 КОРАБЛЬ ПОТОПЛЕН!';
+            // Отмечаем потопленные клетки
+            for (var i = 0; i < sunk.length; i++) {
+                var sr = sunk[i].r;
+                var sc = sunk[i].c;
+                enemyVisible[sr][sc] = 2;
+                // Добавляем анимацию потопления
+            }
+            // Проверяем миссии
+            checkMissions('kill', profile.hits);
+        }
         
         if (enemyShips === 0) {
             gameOver = true;
             profile.wins++;
             profile.rating += 50;
+            profile.coins += 10;
             saveProfile();
             updateUI();
             render();
             playSound('win');
             setTimeout(function() {
                 showResult(true);
-            }, 400);
+            }, 500);
             return;
         }
         render();
@@ -480,9 +591,10 @@ function computerTurn() {
             saveProfile();
             render();
             updateUI();
+            playSound('lose');
             setTimeout(function() {
                 showResult(false);
-            }, 400);
+            }, 500);
             return;
         }
         render();
@@ -505,11 +617,19 @@ function computerTurn() {
 function showResult(won) {
     showScreen('result');
     document.getElementById('resultIcon').textContent = won ? '🏆' : '💀';
-    document.getElementById('resultTitle').textContent = won ? 'Победа!' : 'Поражение...';
+    document.getElementById('resultTitle').textContent = won ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ...';
     document.getElementById('resultDetail').textContent = won ? 'Вы уничтожили все корабли!' : 'Вы проиграли...';
     document.getElementById('resultShots').textContent = currentGameShots;
     var acc = currentGameShots > 0 ? Math.round(currentGameHits / currentGameShots * 100) : 0;
     document.getElementById('resultAccuracy').textContent = acc + '%';
+    document.getElementById('resultReward').textContent = won ? '+50⭐ +10💰' : '+0';
+    
+    // Проверяем миссии
+    if (won) {
+        checkMissions('win', profile.wins);
+    }
+    checkMissions('shot', profile.shots);
+    checkMissions('rating', profile.rating);
 }
 
 function closeResult() {
@@ -528,10 +648,10 @@ function renderShipyard() {
         var item = document.createElement('div');
         item.className = 'shipyard-item';
         var cost = ship.level * 50 + ship.price;
-        var canUpgrade = ship.owned && profile.rating >= cost;
-        var canBuy = !ship.owned && profile.rating >= ship.price;
+        var canUpgrade = ship.owned && profile.coins >= cost;
+        var canBuy = !ship.owned && profile.coins >= ship.price;
         
-        var btnText = ship.owned ? '⬆ ' + cost + '⭐' : 'Купить ' + ship.price + '⭐';
+        var btnText = ship.owned ? '⬆ ' + cost + '💰' : 'Купить ' + ship.price + '💰';
         var disabled = (!canUpgrade && !canBuy) ? 'disabled' : '';
         
         item.innerHTML = 
@@ -555,20 +675,20 @@ window.upgradeShip = function(id) {
     if (!ship) return;
     
     if (!ship.owned) {
-        if (profile.rating < ship.price) {
-            alert('Недостаточно рейтинга!');
+        if (profile.coins < ship.price) {
+            alert('Недостаточно монет!');
             return;
         }
-        profile.rating -= ship.price;
+        profile.coins -= ship.price;
         ship.owned = true;
         ship.level = 1;
     } else {
         var cost = ship.level * 50 + ship.price;
-        if (profile.rating < cost) {
-            alert('Недостаточно рейтинга!');
+        if (profile.coins < cost) {
+            alert('Недостаточно монет!');
             return;
         }
-        profile.rating -= cost;
+        profile.coins -= cost;
         ship.level++;
         ship.damage = Math.floor(ship.damage * 1.2);
         ship.hp = Math.floor(ship.hp * 1.15);
@@ -591,14 +711,14 @@ function renderSkins() {
         var isOwned = s.owned;
         var isActive = currentSkin === i;
         
-        var btnText = isOwned ? (isActive ? '✅ Используется' : 'Использовать') : 'Купить ' + s.price + '⭐';
+        var btnText = isOwned ? (isActive ? '✅ Используется' : 'Использовать') : 'Купить ' + s.price + '💰';
         var disabled = (isOwned && isActive) ? 'disabled' : '';
         
         item.innerHTML = 
             '<div style="font-size:32px;">' + s.icon + '</div>' +
             '<div class="ship-info">' +
                 '<div class="ship-name">' + s.name + (isActive ? ' ✅' : '') + '</div>' +
-                '<div class="ship-level">' + (isOwned ? 'Владелец' : 'Цена: ' + s.price + '⭐') + '</div>' +
+                '<div class="ship-level">' + (isOwned ? 'Владелец' : 'Цена: ' + s.price + '💰') + '</div>' +
             '</div>' +
             '<button class="upgrade-btn" onclick="buySkin(' + i + ')" ' + disabled + '>' + btnText + '</button>';
         container.appendChild(item);
@@ -617,12 +737,12 @@ window.buySkin = function(id) {
         return;
     }
     
-    if (profile.rating < skin.price) {
-        alert('Недостаточно рейтинга! Нужно ' + skin.price + '⭐');
+    if (profile.coins < skin.price) {
+        alert('Недостаточно монет! Нужно ' + skin.price + '💰');
         return;
     }
     
-    profile.rating -= skin.price;
+    profile.coins -= skin.price;
     skin.owned = true;
     currentSkin = id;
     saveProfile();
@@ -649,9 +769,34 @@ function renderMissions() {
                 '<div class="mission-title">' + m.icon + ' ' + m.title + ' ' + (done ? '✅' : '') + '</div>' +
                 '<div class="mission-desc">' + m.desc + ' (' + progress + '/' + m.target + ')</div>' +
             '</div>' +
-            '<div style="color:#4af;font-size:12px;">+' + m.reward + '⭐</div>';
+            '<div style="color:#4af;font-size:12px;">+' + m.reward + '💰</div>';
         container.appendChild(item);
     }
+}
+
+function checkMissions(type, value) {
+    for (var i = 0; i < missions.length; i++) {
+        var m = missions[i];
+        if (m.completed) continue;
+        
+        var completed = false;
+        switch(m.id) {
+            case 1: if (type === 'win' && value >= m.target) completed = true; break;
+            case 2: if (type === 'win' && value >= m.target) completed = true; break;
+            case 3: if (type === 'shot' && value >= m.target) completed = true; break;
+            case 4: if (type === 'kill' && value >= m.target) completed = true; break;
+            case 5: if (type === 'rating' && value >= m.target) completed = true; break;
+        }
+        
+        if (completed && !m.completed) {
+            m.completed = true;
+            profile.coins += m.reward;
+            saveProfile();
+            updateUI();
+            alert('🎉 Миссия выполнена! +' + m.reward + ' монет!');
+        }
+    }
+    renderMissions();
 }
 
 // === АВАТАР ===
@@ -733,6 +878,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
     updateUI();
     
+    document.getElementById('claimBonus').onclick = claimDailyBonus;
     document.getElementById('btnVsAI').onclick = function() { startGame('ai'); };
     document.getElementById('btnVsPlayer').onclick = function() { startGame('pvp'); };
     document.getElementById('btnShipyard').onclick = function() { showScreen('shipyard'); };
