@@ -1,25 +1,24 @@
 // === Telegram ===
-let tg = window.Telegram?.WebApp;
-let soundEnabled = true;
+var tg = window.Telegram?.WebApp;
+var soundEnabled = true;
 
 // === ИГРОВЫЕ ПЕРЕМЕННЫЕ ===
-let SIZE = 10;
-let difficulty = 'medium';
-let gameMode = 'ai';
-let playerBoard, enemyBoard, enemyVisible;
-let playerShips, enemyShips;
-let gameOver = false;
-let isPlayerTurn = true;
-let moves = 0;
-let currentGameShots = 0;
-let currentGameHits = 0;
+var SIZE = 10;
+var difficulty = 'medium';
+var gameMode = 'ai';
+var playerBoard, enemyBoard, enemyVisible;
+var playerShips, enemyShips;
+var gameOver = false;
+var isPlayerTurn = true;
+var moves = 0;
+var currentGameShots = 0;
+var currentGameHits = 0;
 
 // === КОРАБЛИ (классический набор) ===
-// 1x4, 2x3, 3x2, 4x1 = 20 клеток
-const shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+var shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
 
 // === ПРОФИЛЬ ===
-let profile = {
+var profile = {
     name: 'Капитан',
     rating: 1000,
     wins: 0,
@@ -28,7 +27,7 @@ let profile = {
     hits: 0
 };
 
-const ranks = [
+var ranks = [
     { title: '⚓ Мичман', minRating: 0 },
     { title: '⚓ Лейтенант', minRating: 200 },
     { title: '⚓ Капитан-лейтенант', minRating: 500 },
@@ -37,8 +36,18 @@ const ranks = [
     { title: '⚓ Капитан 1-го ранга', minRating: 4000 }
 ];
 
+// === СКИНЫ ===
+var currentSkin = 0;
+var skinList = [
+    { id: 0, name: 'Стандартный', icon: '🚢', price: 0, owned: true },
+    { id: 1, name: 'Золотой', icon: '✨', price: 500, owned: false },
+    { id: 2, name: 'Бронзовый', icon: '🏅', price: 300, owned: false },
+    { id: 3, name: 'Стальной', icon: '⚓', price: 400, owned: false },
+    { id: 4, name: 'Пиратский', icon: '🏴', price: 800, owned: false }
+];
+
 // === ВЕРФЬ ===
-let shipyard = {
+var shipyard = {
     ships: [
         { id: 1, name: '🛳 Фрегат', level: 1, damage: 10, hp: 20, price: 0, owned: true },
         { id: 2, name: '🚢 Эсминец', level: 1, damage: 15, hp: 30, price: 100, owned: false },
@@ -48,21 +57,21 @@ let shipyard = {
 };
 
 // === МИССИИ ===
-let missions = [
+var missions = [
     { id: 1, icon: '🏆', title: 'Первая победа', desc: 'Одержать 1 победу', progress: 0, target: 1, reward: 50 },
     { id: 2, icon: '🔥', title: 'Морской волк', desc: 'Одержать 10 побед', progress: 0, target: 10, reward: 300 },
     { id: 3, icon: '🎯', title: 'Снайпер', desc: 'Сделать 50 выстрелов', progress: 0, target: 50, reward: 150 }
 ];
 
 // === ЗВУКИ ===
-let audioCtx = null;
+var audioCtx = null;
 
 function playSound(type) {
     if (!soundEnabled) return;
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         
@@ -82,8 +91,8 @@ function playSound(type) {
             osc.stop(audioCtx.currentTime + 0.12);
         } else if (type === 'win') {
             [523, 659, 784].forEach(function(freq, i) {
-                const o = audioCtx.createOscillator();
-                const g = audioCtx.createGain();
+                var o = audioCtx.createOscillator();
+                var g = audioCtx.createGain();
                 o.connect(g);
                 g.connect(audioCtx.destination);
                 o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15);
@@ -98,24 +107,26 @@ function playSound(type) {
 
 // === ЗАГРУЗКА/СОХРАНЕНИЕ ===
 function loadProfile() {
-    const saved = localStorage.getItem('seaBattleProfile');
+    var saved = localStorage.getItem('seaBattleProfile');
     if (saved) {
         try {
-            const p = JSON.parse(saved);
+            var p = JSON.parse(saved);
             profile = { ...profile, ...p };
+            if (p.currentSkin !== undefined) currentSkin = p.currentSkin;
         } catch(e) {}
     }
     updateUI();
 }
 
 function saveProfile() {
-    localStorage.setItem('seaBattleProfile', JSON.stringify(profile));
+    var data = { ...profile, currentSkin: currentSkin };
+    localStorage.setItem('seaBattleProfile', JSON.stringify(data));
 }
 
 function loadSettings() {
-    const saved = localStorage.getItem('seaBattleSettings');
+    var saved = localStorage.getItem('seaBattleSettings');
     if (saved) {
-        const s = JSON.parse(saved);
+        var s = JSON.parse(saved);
         SIZE = s.size || 10;
         difficulty = s.difficulty || 'medium';
         soundEnabled = s.soundEnabled !== undefined ? s.soundEnabled : true;
@@ -126,7 +137,7 @@ function loadSettings() {
 }
 
 function saveSettings() {
-    const settings = {
+    var settings = {
         size: parseInt(document.getElementById('sizeSelect').value),
         difficulty: document.getElementById('difficultySelect').value,
         soundEnabled: document.getElementById('soundToggle').checked
@@ -217,6 +228,7 @@ function showScreen(id) {
     document.getElementById(id).classList.add('active');
     if (id === 'shipyard') renderShipyard();
     if (id === 'missions') renderMissions();
+    if (id === 'skins') renderSkins();
 }
 
 function startGame(mode) {
@@ -294,6 +306,12 @@ function render() {
     p1Board.innerHTML = '';
     p2Board.innerHTML = '';
     
+    var skinClass = '';
+    if (currentSkin === 1) skinClass = 'skin-gold';
+    else if (currentSkin === 2) skinClass = 'skin-bronze';
+    else if (currentSkin === 3) skinClass = 'skin-steel';
+    else if (currentSkin === 4) skinClass = 'skin-pirate';
+    
     for (var r = 0; r < SIZE; r++) {
         for (var c = 0; c < SIZE; c++) {
             // Своё поле
@@ -305,7 +323,20 @@ function render() {
             var val = playerBoard[r][c];
             if (val === 1) {
                 cell1.classList.add('ship');
-                cell1.dataset.size = getShipSize(r, c, playerBoard);
+                if (skinClass) cell1.classList.add(skinClass);
+                var size = getShipSize(r, c, playerBoard);
+                cell1.dataset.size = size;
+                
+                if (size >= 3) {
+                    var detail = document.createElement('div');
+                    detail.className = 'ship-detail';
+                    cell1.appendChild(detail);
+                }
+                if (size >= 4) {
+                    var flag = document.createElement('div');
+                    flag.className = 'ship-flag';
+                    cell1.appendChild(flag);
+                }
             } else if (val === 2) {
                 cell1.classList.add('hit');
             } else if (val === 3) {
@@ -326,6 +357,17 @@ function render() {
                 cell2.classList.add('miss');
             } else {
                 cell2.classList.add('fog');
+                // Прицел для необстрелянных клеток
+                var crosshair = document.createElement('div');
+                crosshair.className = 'crosshair';
+                crosshair.innerHTML = 
+                    '<div class="circle"></div>' +
+                    '<div class="dot"></div>' +
+                    '<div class="corner corner-tl"></div>' +
+                    '<div class="corner corner-tr"></div>' +
+                    '<div class="corner corner-bl"></div>' +
+                    '<div class="corner corner-br"></div>';
+                cell2.appendChild(crosshair);
             }
             p2Board.appendChild(cell2);
         }
@@ -521,6 +563,59 @@ window.upgradeShip = function(id) {
     updateUI();
 };
 
+// === СКИНЫ ===
+function renderSkins() {
+    var container = document.getElementById('skinsList');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    for (var i = 0; i < skinList.length; i++) {
+        var s = skinList[i];
+        var item = document.createElement('div');
+        item.className = 'shipyard-item';
+        var isOwned = s.owned;
+        var isActive = currentSkin === i;
+        
+        var btnText = isOwned ? (isActive ? '✅ Используется' : 'Использовать') : 'Купить ' + s.price + '⭐';
+        var disabled = (isOwned && isActive) ? 'disabled' : '';
+        
+        item.innerHTML = 
+            '<div style="font-size:32px;">' + s.icon + '</div>' +
+            '<div class="ship-info">' +
+                '<div class="ship-name">' + s.name + (isActive ? ' ✅' : '') + '</div>' +
+                '<div class="ship-level">' + (isOwned ? 'Владелец' : 'Цена: ' + s.price + '⭐') + '</div>' +
+            '</div>' +
+            '<button class="upgrade-btn" onclick="buySkin(' + i + ')" ' + disabled + '>' + btnText + '</button>';
+        container.appendChild(item);
+    }
+}
+
+window.buySkin = function(id) {
+    var skin = skinList[id];
+    if (!skin) return;
+    
+    if (skin.owned) {
+        currentSkin = id;
+        saveProfile();
+        renderSkins();
+        render();
+        return;
+    }
+    
+    if (profile.rating < skin.price) {
+        alert('Недостаточно рейтинга! Нужно ' + skin.price + '⭐');
+        return;
+    }
+    
+    profile.rating -= skin.price;
+    skin.owned = true;
+    currentSkin = id;
+    saveProfile();
+    renderSkins();
+    updateUI();
+    render();
+};
+
 // === МИССИИ ===
 function renderMissions() {
     var container = document.getElementById('missionsList');
@@ -628,6 +723,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnVsAI').onclick = function() { startGame('ai'); };
     document.getElementById('btnVsPlayer').onclick = function() { startGame('pvp'); };
     document.getElementById('btnShipyard').onclick = function() { showScreen('shipyard'); };
+    document.getElementById('btnSkins').onclick = function() { showScreen('skins'); };
     document.getElementById('btnMissions').onclick = function() { showScreen('missions'); };
     document.getElementById('btnSettings').onclick = function() { showScreen('settings'); };
     document.getElementById('backToMenu').onclick = backToMenu;
@@ -643,6 +739,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showScreen('menu');
     };
     document.getElementById('closeShipyard').onclick = function() { showScreen('menu'); };
+    document.getElementById('closeSkins').onclick = function() { showScreen('menu'); };
     document.getElementById('closeMissions').onclick = function() { showScreen('menu'); };
     document.getElementById('closeResult').onclick = closeResult;
     document.getElementById('backToMenuFromResult').onclick = backToMenu;
@@ -660,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (active.id === 'settings') {
                     saveSettings();
                     showScreen('menu');
-                } else if (active.id === 'shipyard' || active.id === 'missions') {
+                } else if (active.id === 'shipyard' || active.id === 'skins' || active.id === 'missions') {
                     showScreen('menu');
                 } else if (active.id === 'result') {
                     showScreen('menu');
