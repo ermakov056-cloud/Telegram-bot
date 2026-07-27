@@ -14,7 +14,7 @@ var moves = 0;
 var currentGameShots = 0;
 var currentGameHits = 0;
 
-// === КОРАБЛИ (классический набор) ===
+// === КОРАБЛИ ===
 var shipSizes = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
 
 // === ПРОФИЛЬ ===
@@ -285,23 +285,36 @@ function render() {
     var p1Board = document.getElementById('playerBoard');
     var p2Board = document.getElementById('enemyBoard');
     
-    var containerWidth = Math.min(window.innerWidth * 0.42, 180);
-    var containerHeight = Math.min(window.innerHeight * 0.35, 280);
-    var containerSize = Math.min(containerWidth, containerHeight);
-    var cellSize = Math.max(16, Math.floor((containerSize - (SIZE - 1) * 2) / SIZE));
-    var gridSize = cellSize * SIZE + (SIZE - 1) * 2;
+    // Расчёт размера
+    var boardContainer = document.querySelector('.board-container');
+    var containerWidth = boardContainer ? boardContainer.clientWidth - 6 : 160;
+    if (containerWidth < 100) containerWidth = 140;
     
+    var cellSize = Math.floor((containerWidth - (SIZE - 1) * 2) / SIZE);
+    if (cellSize < 14) cellSize = 14;
+    if (cellSize > 32) cellSize = 32;
+    
+    if (window.innerWidth < 400) cellSize = Math.min(cellSize, 26);
+    if (window.innerWidth < 380) cellSize = Math.min(cellSize, 22);
+    if (window.innerWidth < 350) cellSize = Math.min(cellSize, 18);
+    if (window.innerWidth < 330) cellSize = Math.min(cellSize, 16);
+    
+    var gridSize = cellSize * SIZE + (SIZE - 1) * 2;
     var gridTemplate = 'repeat(' + SIZE + ', ' + cellSize + 'px)';
     
     p1Board.style.gridTemplateColumns = gridTemplate;
     p1Board.style.gridTemplateRows = gridTemplate;
     p1Board.style.width = gridSize + 'px';
     p1Board.style.height = gridSize + 'px';
+    p1Board.style.maxWidth = '100%';
+    p1Board.style.maxHeight = '100%';
     
     p2Board.style.gridTemplateColumns = gridTemplate;
     p2Board.style.gridTemplateRows = gridTemplate;
     p2Board.style.width = gridSize + 'px';
     p2Board.style.height = gridSize + 'px';
+    p2Board.style.maxWidth = '100%';
+    p2Board.style.maxHeight = '100%';
     
     p1Board.innerHTML = '';
     p2Board.innerHTML = '';
@@ -327,18 +340,15 @@ function render() {
                 var size = getShipSize(r, c, playerBoard);
                 cell1.dataset.size = size;
                 
-                // Труба для 2,3,4 палубных
                 if (size >= 2) {
                     var detail = document.createElement('div');
                     detail.className = 'ship-detail';
                     cell1.appendChild(detail);
                 }
-                // Флаг для 4-палубных
                 if (size >= 4) {
                     var flag = document.createElement('div');
                     flag.className = 'ship-flag';
                     cell1.appendChild(flag);
-                    
                     var bow = document.createElement('div');
                     bow.className = 'ship-bow';
                     cell1.appendChild(bow);
@@ -363,7 +373,6 @@ function render() {
                 cell2.classList.add('miss');
             } else {
                 cell2.classList.add('fog');
-                // Прицел для необстрелянных клеток
                 var crosshair = document.createElement('div');
                 crosshair.className = 'crosshair';
                 crosshair.innerHTML = 
@@ -382,7 +391,6 @@ function render() {
     document.getElementById('p1Ships').textContent = playerShips;
     document.getElementById('p2Ships').textContent = enemyShips;
     document.getElementById('moveCounter').textContent = moves;
-}
 }
 
 // === ВЫСТРЕЛ ===
@@ -659,9 +667,8 @@ function changeAvatar() {
     saveProfile();
 }
 
-// === ОБРАБОТЧИКИ СОБЫТИЙ ===
+// === ОБРАБОТЧИКИ ===
 document.addEventListener('DOMContentLoaded', function() {
-    // Клик по полю врага
     document.getElementById('enemyBoard').addEventListener('click', function(e) {
         var cell = e.target.closest('.cell');
         if (!cell) return;
@@ -672,7 +679,6 @@ document.addEventListener('DOMContentLoaded', function() {
         makeShot(row, col);
     });
     
-    // Клик по своему полю (для PvP)
     document.getElementById('playerBoard').addEventListener('click', function(e) {
         if (gameMode !== 'pvp') return;
         if (gameOver) return;
