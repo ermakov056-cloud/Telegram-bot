@@ -38,7 +38,7 @@
             </div>
         </div>
 
-        <!-- Игра -->
+        <!-- Игра (горизонтальная) -->
         <div id="game" class="screen">
             <div class="game-container glass">
                 <div class="game-header">
@@ -47,18 +47,19 @@
                     <span id="turnIndicator" class="turn-indicator">🎯</span>
                 </div>
                 
-                <div class="scores">
+                <div class="scores-horizontal">
                     <div>🚢 <span id="p1Ships">0</span></div>
-                    <div>💥 <span id="p2Ships">0</span></div>
                     <div>🎯 <span id="moveCounter">0</span></div>
+                    <div>💥 <span id="p2Ships">0</span></div>
                 </div>
                 
-                <div class="boards-wrapper">
-                    <div class="board-container">
+                <div class="boards-horizontal">
+                    <div class="board-wrapper">
                         <div class="board-title">Ваша эскадра</div>
                         <div class="board" id="playerBoard"></div>
                     </div>
-                    <div class="board-container">
+                    <div class="vs-divider">⚔️</div>
+                    <div class="board-wrapper">
                         <div class="board-title" id="enemyBoardTitle">🌊 Акватория</div>
                         <div class="board" id="enemyBoard"></div>
                     </div>
